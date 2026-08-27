@@ -1,6 +1,6 @@
 void projectDijets()
 {
-  TFile *f = new TFile("hists/hist-unfoldedData.root","READ");
+  TFile *f = new TFile("hists/hist-full.root","READ");
   TH3F *h_pt1pt2 = (TH3F*)f->Get("h_pt1pt2");
   int ncent = h_pt1pt2->GetNbinsZ();
   TH2F *h_2D[ncent];
@@ -27,6 +27,7 @@ void projectDijets()
       h_2D[i]->SetName(Form("h_2D_%i",i));
 
       h_2D_unsym[i] = (TH2F*)h_2D[i]->Clone();
+ 	  h_2D_unsym[i]->Reset();
       h_2D_unsym[i]->SetName(Form("h_2D_unsym_%i",i));
       
       //unsymmetrize
@@ -99,7 +100,7 @@ void projectDijets()
       
     }//cent loop
 
-  TFile *fout = new TFile("hists/projections_unfoldData.root","RECREATE");
+  TFile *fout = new TFile("hists/projections.root","RECREATE");
   for(int i = 0; i < ncent; i++)
     {
       h_2D[i]->Write();
