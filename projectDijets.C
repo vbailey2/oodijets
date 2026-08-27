@@ -1,6 +1,6 @@
-void projectDijets()
+void projectDijets(const char *infile = "hists/hist-full.root", const char *outfile = "hists/projections.root")
 {
-	TFile *f = new TFile("hists/hist-full.root", "READ");
+	TFile *f = new TFile(infile, "READ");
 	TH3F *h_pt1pt2 = (TH3F *)f->Get("h_pt1pt2");
 	int ncent = h_pt1pt2->GetNbinsZ();
 	TH2F *h_2D[ncent];
@@ -101,7 +101,7 @@ void projectDijets()
 
 	} // cent loop
 
-	TFile *fout = new TFile("hists/projections.root", "RECREATE");
+	TFile *fout = new TFile(outfile, "RECREATE");
 	for (int i = 0; i < ncent; i++)
 	{
 		h_2D[i]->Write();

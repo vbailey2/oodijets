@@ -90,12 +90,18 @@ void unfoldData(int nIterations = 2)
 
       hMeas2D[ic]->SetBinContent(ix, iy, hMeas1D[ic]->GetBinContent(g));
       hMeas2D[ic]->SetBinError(ix, iy, hMeas1D[ic]->GetBinError(g));
+
+      // stitch the unfolded 2D slices back into a 3D pt1-pt2-cent histogram,
+      // matching the "h_pt1pt2" layout projectDijets() expects as input
+      hUnfolded3D->SetBinContent(ix, iy, ic + 1, hUnfolded1D[ic]->GetBinContent(g));
+      hUnfolded3D->SetBinError(ix, iy, ic + 1, hUnfolded1D[ic]->GetBinError(g));
     }
   }
+  hUnfolded3D->SetName("h_pt1pt2");
 
-  TFile *fout = new TFile("hists/hist-unfoldedData.root", "RECREATE");
+  TFile *fout = new TFile(Form("hists/hist-unfoldedData_iter%d.root", nIterations), "RECREATE");
   h_xj_bins->Write();
-  h_pt1pt2->Write();
+  hUnfolded3D->Write();
   for (int ic = 0; ic < cent_N; ic++)
   {
     hTrue2D[ic]->Write();
