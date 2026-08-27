@@ -23,6 +23,9 @@ void drawhists(int isunfold = 0)
 	}
 	TFile *f = new TFile(fname.c_str(), "READ");
 	TFile *fproj = new TFile(projname.c_str(), "READ");
+	TFile *fpp = nullptr;
+	if (isunfold)
+		fpp = new TFile("hists/final_plots_pp_r04.root", "READ");
 
 	TCanvas *c = new TCanvas("c", "c", 700, 700);
 
@@ -112,7 +115,13 @@ void drawhists(int isunfold = 0)
 
 	for (int ipt = 0; ipt < n_final; ipt++)
 	{
-		c->cd();
+		if (isunfold)
+		{
+			c2->cd();
+			pad1->cd();
+		}
+		else
+			c->cd();
 		if (!isunfold)
 			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
 		else
@@ -135,6 +144,18 @@ void drawhists(int isunfold = 0)
 				h_xj1D[icent][ipt]->Draw("SAME");
 			hleg->AddEntry(h_xj1D[icent][ipt], cent_str[icent].c_str(), "p");
 		}
+
+		TGraphAsymmErrors *gpp = nullptr;
+		if (isunfold)
+		{
+			gpp = (TGraphAsymmErrors *)fpp->Get(Form("g_final_xj_statistics_%d_1", ipt));
+			gpp->SetMarkerStyle(24);
+			gpp->SetMarkerColor(kBlack);
+			gpp->SetLineColor(kBlack);
+			gpp->Draw("P SAME");
+			hleg->AddEntry(gpp, "pp", "p");
+		}
+
 		leg->Draw();
 		cleg->Draw();
 		hleg->Draw();
@@ -143,8 +164,82 @@ void drawhists(int isunfold = 0)
 			sunfold = Form("unfold_iter%d", isunfold);
 		else
 			sunfold = "";
-		c->Print(Form("plots/xj_pt%i_%s.pdf", ipt, sunfold.c_str()));
-		c->Clear();
+
+		if (isunfold)
+		{
+			pad2->cd();
+			for (int icent = 0; icent < ncent; icent++)
+			{
+				TGraphAsymmErrors *gratio = (TGraphAsymmErrors *)gpp->Clone(Form("g_ratio_cent%i_pt%i", icent, ipt));
+				int npts = gratio->GetN();
+				for (int ip = 0; ip < npts; ip++)
+				{
+					double x, ypp;
+					gratio->GetPoint(ip, x, ypp);
+					int bin = h_xj1D[icent][ipt]->GetXaxis()->FindBin(x);
+					double yhist = h_xj1D[icent][ipt]->GetBinContent(bin);
+					double ehist = h_xj1D[icent][ipt]->GetBinError(bin);
+					double eyppLow = gratio->GetErrorYlow(ip);
+					double eyppHigh = gratio->GetErrorYhigh(ip);
+
+					if (ypp == 0 || yhist == 0)
+					{
+						gratio->SetPoint(ip, x, 0);
+						gratio->SetPointEYlow(ip, 0);
+						gratio->SetPointEYhigh(ip, 0);
+						continue;
+					}
+
+					double ratio = yhist / ypp;
+					double relErrHist = ehist / yhist;
+					double errLow = ratio * std::sqrt(relErrHist * relErrHist + (eyppLow / ypp) * (eyppLow / ypp));
+					double errHigh = ratio * std::sqrt(relErrHist * relErrHist + (eyppHigh / ypp) * (eyppHigh / ypp));
+
+					gratio->SetPoint(ip, x, ratio);
+					gratio->SetPointEYlow(ip, errLow);
+					gratio->SetPointEYhigh(ip, errHigh);
+				}
+
+				gratio->SetMarkerColor(colors[icent]);
+				gratio->SetLineColor(colors[icent]);
+				gratio->SetMarkerStyle(20);
+
+				gratio->SetTitle("");
+				gratio->GetYaxis()->SetRangeUser(0, 2);
+				gratio->GetXaxis()->SetLimits(0.2, 1);
+				gratio->GetXaxis()->SetTitle("x_{J}");
+				gratio->GetXaxis()->SetTitleSize(0.12);
+				gratio->GetXaxis()->SetTitleOffset(1.0);
+				gratio->GetXaxis()->SetLabelSize(0.10);
+				gratio->GetXaxis()->SetTickLength(0.07);
+
+				gratio->GetYaxis()->SetTitle("AA/pp");
+				gratio->GetYaxis()->SetTitleSize(0.12);
+				gratio->GetYaxis()->SetTitleOffset(0.45);
+				gratio->GetYaxis()->SetLabelSize(0.10);
+				gratio->GetYaxis()->SetNdivisions(505);
+
+				if (icent == 0)
+					gratio->Draw("AP");
+				else
+					gratio->Draw("P SAME");
+			}
+
+			TLine *ppline = new TLine(0.2, 1.0, 1.0, 1.0);
+			ppline->SetLineColor(kBlack);
+			ppline->SetLineStyle(2);
+			ppline->Draw("SAME");
+
+			c2->Print(Form("plots/xj_pt%i_%s.pdf", ipt, sunfold.c_str()));
+			c2->Clear();
+			pad1->Draw();
+			pad2->Draw();
+		}
+		else
+		{
+			c->Print(Form("plots/xj_pt%i_%s.pdf", ipt, sunfold.c_str()));
+			c->Clear();
+		}
 		hleg->Clear();
 		cleg->Clear();
 
