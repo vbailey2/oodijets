@@ -1,31 +1,30 @@
 int GlobalBin(int ix, int iy, int nBinsY)
 {
-    return (ix - 1) * nBinsY + iy;
+  return (ix - 1) * nBinsY + iy;
 }
- 
+
 // -----------------------------------------------------------------
 // inverse of GlobalBin
 // -----------------------------------------------------------------
 void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
 {
-    int g = globalBin - 1; // 0-based
-    ix = g / nBinsY + 1;
-    iy = g % nBinsY + 1;
+  int g = globalBin - 1; // 0-based
+  ix = g / nBinsY + 1;
+  iy = g % nBinsY + 1;
 }
-
 
 void unfoldClosure(int nIterations = 2)
 {
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();
   TH3::SetDefaultSumw2();
-  
-  TFile *f = new TFile("hists/histMC.root","READ");
-  TH3F *h_xj_bins = (TH3F*)f->Get("h_xj");
-  TH3F *h_pt1pt2 = (TH3F*)f->Get("h_pt1pt2");
+
+  TFile *f = new TFile("hists/histMC.root", "READ");
+  TH3F *h_xj_bins = (TH3F *)f->Get("h_xj");
+  TH3F *h_pt1pt2 = (TH3F *)f->Get("h_pt1pt2");
   int cent_N = h_pt1pt2->GetNbinsZ();
   int pt_N = h_pt1pt2->GetNbinsX();
-  
+
   TH2D *hTrue2D[cent_N];
   TH2D *hMeas2D[cent_N];
   TH2D *hUnfolded2D[cent_N];
@@ -34,7 +33,7 @@ void unfoldClosure(int nIterations = 2)
   TH1D *hFake1D[cent_N];
   TH1D *hUnfolded1D[cent_N];
 
-  //for half closure
+  // for half closure
   TH2D *hTrue2DHalf[cent_N];
   TH2D *hMeas2DHalf[cent_N];
   TH2D *hUnfolded2DHalf[cent_N];
@@ -42,120 +41,120 @@ void unfoldClosure(int nIterations = 2)
   TH1D *hMeas1DHalf[cent_N];
   TH1D *hFake1DHalf[cent_N];
   TH1D *hUnfolded1DHalf[cent_N];
-  
-  TH3F *hUnfolded3D = (TH3F*)h_pt1pt2->Clone();
+
+  TH3F *hUnfolded3D = (TH3F *)h_pt1pt2->Clone();
   hUnfolded3D->SetName("h_unfoldpt1pt2");
   hUnfolded3D->Reset();
-  TH3F *hTrue3D = (TH3F*)h_pt1pt2->Clone();
+  TH3F *hTrue3D = (TH3F *)h_pt1pt2->Clone();
   hTrue3D->SetName("h_truept1pt2");
   hTrue3D->Reset();
-  TH3F *hMeas3D = (TH3F*)h_pt1pt2->Clone();
+  TH3F *hMeas3D = (TH3F *)h_pt1pt2->Clone();
   hMeas3D->SetName("h_measpt1pt2");
   hMeas3D->Reset();
-   
- 
-  std::vector<RooUnfoldResponse*> response(cent_N);
-  std::vector<RooUnfoldBayes>     unfold;
+
+  std::vector<RooUnfoldResponse *> response(cent_N);
+  std::vector<RooUnfoldBayes> unfold;
   unfold.reserve(cent_N);
 
-  std::vector<RooUnfoldResponse*> responseHalf(cent_N);
-  std::vector<RooUnfoldBayes>     unfoldHalf;
+  std::vector<RooUnfoldResponse *> responseHalf(cent_N);
+  std::vector<RooUnfoldBayes> unfoldHalf;
   unfoldHalf.reserve(cent_N);
-  
-  for(int ic = 0; ic < cent_N; ic++)
+
+  for (int ic = 0; ic < cent_N; ic++)
+  {
+    hTrue2D[ic] = (TH2D *)f->Get(Form("hTrue2D%i", ic));
+    hMeas2D[ic] = (TH2D *)f->Get(Form("hMeas2D%i", ic));
+    hTrue1D[ic] = (TH1D *)f->Get(Form("hTrue1D%i", ic));
+    hMeas1D[ic] = (TH1D *)f->Get(Form("hMeas1D%i", ic));
+    hFake1D[ic] = (TH1D *)f->Get(Form("hFake1D%i", ic));
+    response[ic] = (RooUnfoldResponse *)f->Get(Form("response%i", ic));
+
+    // we want truth and measured info from the fake data but fakes & response matrix from the "MC" used for unfolding
+    hTrue2DHalf[ic] = (TH2D *)f->Get(Form("hTrue2DB%i", ic));
+    hMeas2DHalf[ic] = (TH2D *)f->Get(Form("hMeas2DB%i", ic));
+    hTrue1DHalf[ic] = (TH1D *)f->Get(Form("hTrue1DB%i", ic));
+    hMeas1DHalf[ic] = (TH1D *)f->Get(Form("hMeas1DB%i", ic));
+    hFake1DHalf[ic] = (TH1D *)f->Get(Form("hFake1DA%i", ic));
+    responseHalf[ic] = (RooUnfoldResponse *)f->Get(Form("responseA%i", ic));
+
+    const int nBinsY = hTrue2D[ic]->GetNbinsY();
+    const int nGlobalBins = hMeas1D[ic]->GetNbinsX();
+
+    // run unfold
+    hMeas1D[ic]->Add(hFake1D[ic], -1);
+    unfold.emplace_back(response[ic], hMeas1D[ic], nIterations);
+    unfold[ic].SetVerbose(1);
+
+    hUnfolded1D[ic] = (TH1D *)unfold[ic].Hunfold(RooUnfold::kErrors);
+    hUnfolded1D[ic]->SetName(Form("hUnfolded1D_cent%d", ic));
+
+    hMeas1DHalf[ic]->Add(hFake1DHalf[ic], -1);
+    unfoldHalf.emplace_back(responseHalf[ic], hMeas1DHalf[ic], nIterations);
+    unfoldHalf[ic].SetVerbose(1);
+
+    hUnfolded1DHalf[ic] = (TH1D *)unfoldHalf[ic].Hunfold(RooUnfold::kErrors);
+    hUnfolded1DHalf[ic]->SetName(Form("hUnfolded1DHalf_cent%d", ic));
+
+    // map back to 2D
+    hUnfolded2D[ic] = (TH2D *)hTrue2D[ic]->Clone(Form("hUnfolded2D_cent%d", ic));
+    hUnfolded2D[ic]->SetTitle(Form("Unfolded (Bayes), cent %i", ic));
+    hUnfolded2D[ic]->SetDirectory(nullptr);
+    hUnfolded2D[ic]->Reset();
+
+    hUnfolded2DHalf[ic] = (TH2D *)hTrue2DHalf[ic]->Clone(Form("hUnfolded2DHalf_cent%d", ic));
+    hUnfolded2DHalf[ic]->SetTitle(Form("Unfolded (Bayes), cent %i", ic));
+    hUnfolded2DHalf[ic]->SetDirectory(nullptr);
+    hUnfolded2DHalf[ic]->Reset();
+
+    // also map 1D truth/reco to 2D
+    hTrue2D[ic]->Reset();
+    hMeas2D[ic]->Reset();
+    hTrue2DHalf[ic]->Reset();
+    hMeas2DHalf[ic]->Reset();
+
+    for (int g = 1; g <= nGlobalBins; ++g)
     {
-      hTrue2D[ic] = (TH2D*)f->Get(Form("hTrue2D%i",ic));
-      hMeas2D[ic] = (TH2D*)f->Get(Form("hMeas2D%i",ic));
-      hTrue1D[ic] = (TH1D*)f->Get(Form("hTrue1D%i",ic));
-      hMeas1D[ic] = (TH1D*)f->Get(Form("hMeas1D%i",ic));
-      hFake1D[ic] = (TH1D*)f->Get(Form("hFake1D%i",ic));
-      response[ic] = (RooUnfoldResponse*)f->Get(Form("response%i",ic));
+      int ix, iy;
+      InverseGlobalBin(g, nBinsY, ix, iy);
+      hUnfolded2D[ic]->SetBinContent(ix, iy, hUnfolded1D[ic]->GetBinContent(g));
+      hUnfolded2D[ic]->SetBinError(ix, iy, hUnfolded1D[ic]->GetBinError(g));
 
-      //we want truth and measured info from the fake data but fakes & response matrix from the "MC" used for unfolding
-      hTrue2DHalf[ic] = (TH2D*)f->Get(Form("hTrue2DB%i",ic));
-      hMeas2DHalf[ic] = (TH2D*)f->Get(Form("hMeas2DB%i",ic));
-      hTrue1DHalf[ic] = (TH1D*)f->Get(Form("hTrue1DB%i",ic));
-      hMeas1DHalf[ic] = (TH1D*)f->Get(Form("hMeas1DB%i",ic));
-      hFake1DHalf[ic] = (TH1D*)f->Get(Form("hFake1DA%i",ic));
-      responseHalf[ic] = (RooUnfoldResponse*)f->Get(Form("responseA%i",ic));
-      
-      const int nBinsY = hTrue2D[ic]->GetNbinsY();
-      const int nGlobalBins = hMeas1D[ic]->GetNbinsX();
+      hUnfolded2DHalf[ic]->SetBinContent(ix, iy, hUnfolded1DHalf[ic]->GetBinContent(g));
+      hUnfolded2DHalf[ic]->SetBinError(ix, iy, hUnfolded1DHalf[ic]->GetBinError(g));
 
-      //run unfold
-      hMeas1D[ic]->Add(hFake1D[ic],-1);
-      unfold.emplace_back(response[ic], hMeas1D[ic], nIterations);
-      unfold[ic].SetVerbose(1);
-      
-      hUnfolded1D[ic] = (TH1D*) unfold[ic].Hunfold(RooUnfold::kErrors);
-      hUnfolded1D[ic]->SetName(Form("hUnfolded1D_cent%d", ic));
+      hTrue2D[ic]->SetBinContent(ix, iy, hTrue1D[ic]->GetBinContent(g));
+      hTrue2D[ic]->SetBinError(ix, iy, hTrue1D[ic]->GetBinError(g));
 
-      hMeas1DHalf[ic]->Add(hFake1DHalf[ic],-1);
-      unfoldHalf.emplace_back(responseHalf[ic], hMeas1DHalf[ic], nIterations);
-      unfoldHalf[ic].SetVerbose(1);
+      hTrue2DHalf[ic]->SetBinContent(ix, iy, hTrue1DHalf[ic]->GetBinContent(g));
+      hTrue2DHalf[ic]->SetBinError(ix, iy, hTrue1DHalf[ic]->GetBinError(g));
 
-      hUnfolded1DHalf[ic] = (TH1D*) unfoldHalf[ic].Hunfold(RooUnfold::kErrors);
-      hUnfolded1DHalf[ic]->SetName(Form("hUnfolded1DHalf_cent%d", ic));
-      
-      //map back to 2D
-      hUnfolded2D[ic] = (TH2D*) hTrue2D[ic]->Clone(Form("hUnfolded2D_cent%d", ic));
-      hUnfolded2D[ic]->SetTitle(Form("Unfolded (Bayes), cent %i", ic));
-      hUnfolded2D[ic]->SetDirectory(nullptr);
-      hUnfolded2D[ic]->Reset();
+      hMeas2D[ic]->SetBinContent(ix, iy, hMeas1D[ic]->GetBinContent(g));
+      hMeas2D[ic]->SetBinError(ix, iy, hMeas1D[ic]->GetBinError(g));
 
-      hUnfolded2DHalf[ic] = (TH2D*) hTrue2DHalf[ic]->Clone(Form("hUnfolded2DHalf_cent%d", ic));
-      hUnfolded2DHalf[ic]->SetTitle(Form("Unfolded (Bayes), cent %i", ic));
-      hUnfolded2DHalf[ic]->SetDirectory(nullptr);
-      hUnfolded2DHalf[ic]->Reset();
-
-      //also map 1D truth/reco to 2D
-      hTrue2D[ic]->Reset();
-      hMeas2D[ic]->Reset();
-      hTrue2DHalf[ic]->Reset();
-      hMeas2DHalf[ic]->Reset();
-      
-      for (int g = 1; g <= nGlobalBins; ++g) {
-	int ix, iy;
-	InverseGlobalBin(g, nBinsY, ix, iy);
-	hUnfolded2D[ic]->SetBinContent(ix, iy, hUnfolded1D[ic]->GetBinContent(g));
-	hUnfolded2D[ic]->SetBinError(ix, iy, hUnfolded1D[ic]->GetBinError(g));
-
-	hUnfolded2DHalf[ic]->SetBinContent(ix, iy, hUnfolded1DHalf[ic]->GetBinContent(g));
-        hUnfolded2DHalf[ic]->SetBinError(ix, iy, hUnfolded1DHalf[ic]->GetBinError(g));
-	
-	hTrue2D[ic]->SetBinContent(ix, iy, hTrue1D[ic]->GetBinContent(g));
-	hTrue2D[ic]->SetBinError(ix, iy, hTrue1D[ic]->GetBinError(g));
-
-	hTrue2DHalf[ic]->SetBinContent(ix, iy, hTrue1DHalf[ic]->GetBinContent(g));
-        hTrue2DHalf[ic]->SetBinError(ix, iy, hTrue1DHalf[ic]->GetBinError(g));
-	
-	hMeas2D[ic]->SetBinContent(ix, iy, hMeas1D[ic]->GetBinContent(g));
-        hMeas2D[ic]->SetBinError(ix, iy, hMeas1D[ic]->GetBinError(g));
-
-	hMeas2DHalf[ic]->SetBinContent(ix, iy, hMeas1DHalf[ic]->GetBinContent(g));
-	hMeas2DHalf[ic]->SetBinError(ix, iy, hMeas1DHalf[ic]->GetBinError(g));
-      }      
+      hMeas2DHalf[ic]->SetBinContent(ix, iy, hMeas1DHalf[ic]->GetBinContent(g));
+      hMeas2DHalf[ic]->SetBinError(ix, iy, hMeas1DHalf[ic]->GetBinError(g));
     }
+  }
 
-  TFile *fout = new TFile("hists/hist-unfoldedMC.root","RECREATE");
+  TFile *fout = new TFile("hists/hist-unfoldedMC.root", "RECREATE");
   h_xj_bins->Write();
   h_pt1pt2->Write();
-  for(int ic = 0; ic < cent_N; ic++)
-    {
-      hTrue2D[ic]->Write();
-      hMeas2D[ic]->Write();
-      hUnfolded2D[ic]->Write();
+  for (int ic = 0; ic < cent_N; ic++)
+  {
+    hTrue2D[ic]->Write();
+    hMeas2D[ic]->Write();
+    hUnfolded2D[ic]->Write();
 
-      hUnfolded1D[ic]->Write();
-      hTrue1D[ic]->Write();
-      hMeas1D[ic]->Write();
+    hUnfolded1D[ic]->Write();
+    hTrue1D[ic]->Write();
+    hMeas1D[ic]->Write();
 
-      hTrue2DHalf[ic]->Write();
-      hMeas2DHalf[ic]->Write();
-      hUnfolded2DHalf[ic]->Write();
+    hTrue2DHalf[ic]->Write();
+    hMeas2DHalf[ic]->Write();
+    hUnfolded2DHalf[ic]->Write();
 
-      hUnfolded1DHalf[ic]->Write();
-      hTrue1DHalf[ic]->Write();
-      hMeas1DHalf[ic]->Write();
-    }
+    hUnfolded1DHalf[ic]->Write();
+    hTrue1DHalf[ic]->Write();
+    hMeas1DHalf[ic]->Write();
+  }
 }
