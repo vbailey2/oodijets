@@ -5,7 +5,7 @@ notification 	= Never
 Output  	= /sphenix/user/vbailey/logs/out/condor$(process).out
 Error           = /sphenix/user/vbailey/logs/err/condor$(process).err
 Log  		= /tmp/condor$(process)_vb.log
-Initialdir  	= /sphenix/user/vbailey/ooanalysis/analysis/JS-Jet/OODijets/offline
+Initialdir  	= /sphenix/user/vbailey/ooanalysis
 request_memory  = 4096MB
 PeriodicHold    =  (NumJobStarts>=1 && JobStatus == 1 && !(ON_EVICT_CHECK_RequestMemory_REQUIREMENTS))
 Queue 1
