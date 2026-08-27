@@ -46,9 +46,9 @@ void optimizeUnfolding()
       if (i > 0)
       {
         double diffsum = 0;
-        for (int ix = 11; ix <= nx; ix++) //start at bin 11 since thats our first pt bin
+        for (int ix = 1; ix <= nx; ix++) 
         {
-          for (int iy = 11; iy <= ny; iy++)
+          for (int iy = 1; iy <= ny; iy++)
           {
             double diff = hUnfolded2D[i][ic]->GetBinContent(ix, iy) - hUnfolded2D[i - 1][ic]->GetBinContent(ix, iy);
             diffsum += diff * diff;
