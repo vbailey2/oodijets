@@ -50,7 +50,7 @@ void optimizeUnfolding()
         {
           for (int iy = 1; iy <= ny; iy++)
           {
-            double diff = (hUnfolded2D[i][ic]->GetBinContent(ix, iy) - hUnfolded2D[i - 1][ic]->GetBinContent(ix, iy))/hUnfolded2D[i][ic]->GetBinContent(ix, iy);
+            double diff = hUnfolded2D[i][ic]->GetBinContent(ix, iy) - hUnfolded2D[i - 1][ic]->GetBinContent(ix, iy);
             diffsum += diff * diff;
           }
         }
@@ -121,7 +121,7 @@ void optimizeUnfolding()
 	  leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
 	  leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 
-    TLegend *leg2 = new TLegend(.6, .7, .88, .88);
+    TLegend *leg2 = new TLegend(.75, .75, .88, .92);
     leg2->SetFillStyle(0);
     leg2->AddEntry(gStatErr, "#sigma_{stat}", "lp");
     leg2->AddEntry(gDiff, "#sigma_{bin}", "lp");
