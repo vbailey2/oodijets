@@ -1,7 +1,7 @@
 #include "sPhenixStyle.h"
 #include "sPhenixStyle.C"
 
-void drawhists(bool isunfold = 0)
+void drawhists(int isunfold = 0)
 {
 
 	SetsPhenixStyle();
@@ -13,8 +13,8 @@ void drawhists(bool isunfold = 0)
 	string projname;
 	if (isunfold)
 	{
-		fname = "hists/hist-unfoldedData.root";
-		projname = "hists/projections_unfoldData.root";
+		fname = Form("hists/hist-unfoldedData_iter%d.root", isunfold);
+		projname = Form("hists/projections_unfold_iter%d.root", isunfold);
 	}
 	else
 	{
@@ -65,19 +65,14 @@ void drawhists(bool isunfold = 0)
 
 	TH2F *h_xj[ncent];
 	TH2F *h_xjnoproj[ncent];
-	if (!isunfold)
-		h_xj[0] = (TH2F *)fproj->Get("h_xj_0");
-	else
-		h_xj[0] = (TH2F *)fproj->Get("h_xjunfold_0");
+	h_xj[0] = (TH2F *)fproj->Get("h_xj_0");
 	const int n_xj = h_xj[0]->GetNbinsX();
 	const int n_final = h_xj[0]->GetNbinsY();
 	for (int i = 0; i < ncent; i++)
 	{
-		if (isunfold)
-			h_xj[i] = (TH2F *)fproj->Get(Form("h_xjunfold_%i", i));
-		else
+		h_xj[i] = (TH2F *)fproj->Get(Form("h_xj_%i", i));
+		if (!isunfold)
 		{
-			h_xj[i] = (TH2F *)fproj->Get(Form("h_xj_%i", i));
 			// put the non-projected xj in the new pt bins
 			h_xjnoproj[i] = (TH2F *)h_xj[i]->Clone();
 			h_xjnoproj[i]->Reset();
@@ -145,7 +140,7 @@ void drawhists(bool isunfold = 0)
 		hleg->Draw();
 		string sunfold;
 		if (isunfold)
-			sunfold = "unfold";
+			sunfold = Form("unfold_iter%d", isunfold);
 		else
 			sunfold = "";
 		c->Print(Form("plots/xj_pt%i_%s.pdf", ipt, sunfold.c_str()));
