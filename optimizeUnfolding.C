@@ -1,3 +1,6 @@
+#include "sPhenixStyle.h"
+#include "sPhenixStyle.C"
+
 void optimizeUnfolding()
 {
   const int nIterMin = 1;
