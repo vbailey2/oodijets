@@ -26,6 +26,13 @@ void projectUnfoldClosure(bool ishalf = 0)
     // std::cout<<"bin "<<i <<" is "<<final_pt_binning[i]<<std::endl;
   }
 
+  const int nxj_final = 9; // only keep the 9 highest xj bins
+  Double_t final_xj_binning[nxj_final + 1];
+  for (int i = 0; i <= nxj_final; i++)
+  {
+    final_xj_binning[i] = xjaxis->GetAt(npt - nxj_final + i);
+  }
+
   for (int i = 0; i < ncent; i++)
   {
     if (ishalf)
@@ -96,9 +103,9 @@ void projectUnfoldClosure(bool ishalf = 0)
     }
 
     // project
-    h_xjunfold[i] = new TH2F(Form("h_xjunfold_%i", i), "", h_xj_bins->GetNbinsX(), xjaxis->GetArray(), nfinal, final_pt_binning);
-    h_xjmeas[i] = new TH2F(Form("h_xjmeas_%i", i), "", h_xj_bins->GetNbinsX(), xjaxis->GetArray(), nfinal, final_pt_binning);
-    h_xjtrue[i] = new TH2F(Form("h_xjtrue_%i", i), "", h_xj_bins->GetNbinsX(), xjaxis->GetArray(), nfinal, final_pt_binning);
+    h_xjunfold[i] = new TH2F(Form("h_xjunfold_%i", i), "", nxj_final, final_xj_binning, nfinal, final_pt_binning);
+    h_xjmeas[i] = new TH2F(Form("h_xjmeas_%i", i), "", nxj_final, final_xj_binning, nfinal, final_pt_binning);
+    h_xjtrue[i] = new TH2F(Form("h_xjtrue_%i", i), "", nxj_final, final_xj_binning, nfinal, final_pt_binning);
 
     float binvals[nfinal][19] = {};
     float binerrs[nfinal][19] = {};
@@ -158,17 +165,18 @@ void projectUnfoldClosure(bool ishalf = 0)
       }
     }
 
-    // fill xj hist
-    for (int ix = 0; ix < npt; ix++)
+    // fill xj hist, keeping only the nxj_final highest xj bins
+    for (int ix = npt - nxj_final; ix < npt; ix++)
     {
+      int newix = ix - (npt - nxj_final);
       for (int ipt = 0; ipt < nfinal; ipt++)
       {
-        h_xjunfold[i]->SetBinContent(ix + 1, ipt + 1, binvals[ipt][ix]);
-        h_xjunfold[i]->SetBinError(ix + 1, ipt + 1, std::sqrt(binerrs[ipt][ix]));
-        h_xjmeas[i]->SetBinContent(ix + 1, ipt + 1, binvalsmeas[ipt][ix]);
-        h_xjmeas[i]->SetBinError(ix + 1, ipt + 1, std::sqrt(binerrsmeas[ipt][ix]));
-        h_xjtrue[i]->SetBinContent(ix + 1, ipt + 1, binvalstrue[ipt][ix]);
-        h_xjtrue[i]->SetBinError(ix + 1, ipt + 1, std::sqrt(binerrstrue[ipt][ix]));
+        h_xjunfold[i]->SetBinContent(newix + 1, ipt + 1, binvals[ipt][ix]);
+        h_xjunfold[i]->SetBinError(newix + 1, ipt + 1, std::sqrt(binerrs[ipt][ix]));
+        h_xjmeas[i]->SetBinContent(newix + 1, ipt + 1, binvalsmeas[ipt][ix]);
+        h_xjmeas[i]->SetBinError(newix + 1, ipt + 1, std::sqrt(binerrsmeas[ipt][ix]));
+        h_xjtrue[i]->SetBinContent(newix + 1, ipt + 1, binvalstrue[ipt][ix]);
+        h_xjtrue[i]->SetBinError(newix + 1, ipt + 1, std::sqrt(binerrstrue[ipt][ix]));
       }
     }
 

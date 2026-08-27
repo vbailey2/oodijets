@@ -19,6 +19,13 @@ void projectDijets(const char *infile = "hists/hist-full.root", const char *outf
 		// std::cout<<"bin "<<i <<" is "<<final_pt_binning[i]<<std::endl;
 	}
 
+	const int nxj_final = 9; // only keep the 9 highest xj bins
+	Double_t final_xj_binning[nxj_final + 1];
+	for (int i = 0; i <= nxj_final; i++)
+	{
+		final_xj_binning[i] = xjaxis->GetAt(npt - nxj_final + i);
+	}
+
 	for (int i = 0; i < ncent; i++)
 	{
 		h_pt1pt2->GetZaxis()->SetRange(i + 1, i + 1);
@@ -50,7 +57,7 @@ void projectDijets(const char *infile = "hists/hist-full.root", const char *outf
 
 		// project
 		// h_xj[i] = (TH2F*)h_xj_bins->Project3D("yx");
-		h_xj[i] = new TH2F(Form("h_xj_%i", i), "", h_xj_bins->GetNbinsX(), xjaxis->GetArray(), nfinal, final_pt_binning);
+		h_xj[i] = new TH2F(Form("h_xj_%i", i), "", nxj_final, final_xj_binning, nfinal, final_pt_binning);
 		h_xj[i]->SetName(Form("h_xj_%i", i));
 		float binvals[nfinal][19] = {};
 		float binerrs[nfinal][19] = {};
@@ -89,13 +96,14 @@ void projectDijets(const char *infile = "hists/hist-full.root", const char *outf
 			}
 		}
 
-		// fill xj hist
-		for (int ix = 0; ix < npt; ix++)
+		// fill xj hist, keeping only the nxj_final highest xj bins
+		for (int ix = npt - nxj_final; ix < npt; ix++)
 		{
+			int newix = ix - (npt - nxj_final);
 			for (int ipt = 0; ipt < nfinal; ipt++)
 			{
-				h_xj[i]->SetBinContent(ix + 1, ipt + 1, binvals[ipt][ix]);
-				h_xj[i]->SetBinError(ix + 1, ipt + 1, std::sqrt(binerrs[ipt][ix]));
+				h_xj[i]->SetBinContent(newix + 1, ipt + 1, binvals[ipt][ix]);
+				h_xj[i]->SetBinError(newix + 1, ipt + 1, std::sqrt(binerrs[ipt][ix]));
 			}
 		}
 
