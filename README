@@ -1,0 +1,23 @@
+condor.job
+condormc.job
+draw_dataMC.C
+draw_hists.C
+getDijets.C
+hists
+Jet_reso.C
+plots
+projectDijets.C
+runmc.sh
+run.sh
+unfoldClosure.C
+
+The code runs over trees provided by Jaebeom for both OO data and MC
+
+1. getDijets.C makes histograms of reconstructed xj and reconstructed pt1pt2. For MC this also produces the response matrices
+***projectDijets.C (reads in output from getDijets.C) takes these histograms and does the xj projection
+***draw_hists.C (reads in output from getDijets.C and projectDijets.C) draws the histograms for reco xj, the projection closure test, and reco dphi distributions
+
+2. unfoldClosure.C (reads in output from getDijets.C) runs the unfolding on the reco MC
+***projectUnfoldClosure.C (reads in output from unfoldClosure.C) does the xj projection on the unfolded/truth/measured hists
+***drawunfoldclosure.C (reads in output from projectUnfoldClosure.C) draws the closure test histograms
+Both projectUnfoldClosure() and drawunfoldclosure() have the option to do the half or full closure. It defaults to running the half closure test.
