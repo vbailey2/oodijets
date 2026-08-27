@@ -1,7 +1,7 @@
 void projectUnfoldClosure(bool ishalf = 0)
 {
   // TFile *f = new TFile("hists/hist-unfoldedMC.root","READ");
-  TFile *f = new TFile("hists/hist-unfoldedData.root", "READ");
+  TFile *f = new TFile("hists/hist-unfoldedMC.root", "READ");
   TH3F *h_pt1pt2 = (TH3F *)f->Get("h_pt1pt2");
   int ncent = h_pt1pt2->GetNbinsZ();
   TH2F *h_2Dunfold[ncent];
@@ -178,7 +178,7 @@ void projectUnfoldClosure(bool ishalf = 0)
   if (ishalf)
     outname = "hists/projections_unfoldMC_Half.root";
   else
-    outname = "hists/projections_unfoldData.root";
+    outname = "hists/projections_unfoldMC.root";
   TFile *fout = new TFile(outname.c_str(), "RECREATE");
   for (int i = 0; i < ncent; i++)
   {
