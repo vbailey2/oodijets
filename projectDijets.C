@@ -37,10 +37,12 @@ void projectDijets()
 				// std::cout<<"doing bin "<<ipt1<<" , "<<ipt2<<" and "<<ipt2<<" , "<<ipt1<<std::endl;
 				float bincount = 0;
 				bincount += h_2D[i]->GetBinContent(ipt1 + 1, ipt2 + 1);
-				bincount += h_2D[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
+				if (ipt1 != ipt2)
+					bincount += h_2D[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
 				float binerr = 0;
 				binerr += h_2D[i]->GetBinError(ipt1 + 1, ipt2 + 1) * h_2D[i]->GetBinError(ipt1 + 1, ipt2 + 1);
-				binerr += h_2D[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2D[i]->GetBinError(ipt2 + 1, ipt1 + 1);
+				if (ipt1 != ipt2)
+					binerr += h_2D[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2D[i]->GetBinError(ipt2 + 1, ipt1 + 1);
 				h_2D_unsym[i]->SetBinContent(ipt1 + 1, ipt2 + 1, bincount);
 				h_2D_unsym[i]->SetBinError(ipt1 + 1, ipt2 + 1, std::sqrt(binerr));
 			}

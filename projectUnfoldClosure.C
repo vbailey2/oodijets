@@ -60,30 +60,36 @@ void projectUnfoldClosure(bool ishalf = 0)
         // unfold
         float bincount = 0;
         bincount += h_2Dunfold[i]->GetBinContent(ipt1 + 1, ipt2 + 1);
-        bincount += h_2Dunfold[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
+        if (ipt1 != ipt2)
+          bincount += h_2Dunfold[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
         float binerr = 0;
         binerr += h_2Dunfold[i]->GetBinError(ipt1 + 1, ipt2 + 1) * h_2Dunfold[i]->GetBinError(ipt1 + 1, ipt2 + 1);
-        binerr += h_2Dunfold[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2Dunfold[i]->GetBinError(ipt2 + 1, ipt1 + 1);
+        if (ipt1 != ipt2)
+          binerr += h_2Dunfold[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2Dunfold[i]->GetBinError(ipt2 + 1, ipt1 + 1);
         h_2D_unsymunfold[i]->SetBinContent(ipt1 + 1, ipt2 + 1, bincount);
         h_2D_unsymunfold[i]->SetBinError(ipt1 + 1, ipt2 + 1, std::sqrt(binerr));
 
         // measured
         float bincountmeas = 0;
         bincountmeas += h_2Dmeas[i]->GetBinContent(ipt1 + 1, ipt2 + 1);
-        bincountmeas += h_2Dmeas[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
+        if (ipt1 != ipt2)
+          bincountmeas += h_2Dmeas[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
         float binerrmeas = 0;
         binerrmeas += h_2Dmeas[i]->GetBinError(ipt1 + 1, ipt2 + 1) * h_2Dmeas[i]->GetBinError(ipt1 + 1, ipt2 + 1);
-        binerrmeas += h_2Dmeas[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2Dmeas[i]->GetBinError(ipt2 + 1, ipt1 + 1);
+        if (ipt1 != ipt2)
+          binerrmeas += h_2Dmeas[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2Dmeas[i]->GetBinError(ipt2 + 1, ipt1 + 1);
         h_2D_unsymmeas[i]->SetBinContent(ipt1 + 1, ipt2 + 1, bincountmeas);
         h_2D_unsymmeas[i]->SetBinError(ipt1 + 1, ipt2 + 1, std::sqrt(binerrmeas));
 
         // true
         float bincounttrue = 0;
         bincounttrue += h_2Dtrue[i]->GetBinContent(ipt1 + 1, ipt2 + 1);
-        bincounttrue += h_2Dtrue[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
+        if (ipt1 != ipt2)
+          bincounttrue += h_2Dtrue[i]->GetBinContent(ipt2 + 1, ipt1 + 1);
         float binerrtrue = 0;
         binerrtrue += h_2Dtrue[i]->GetBinError(ipt1 + 1, ipt2 + 1) * h_2Dtrue[i]->GetBinError(ipt1 + 1, ipt2 + 1);
-        binerrtrue += h_2Dtrue[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2Dtrue[i]->GetBinError(ipt2 + 1, ipt1 + 1);
+        if (ipt1 != ipt2)
+          binerrtrue += h_2Dtrue[i]->GetBinError(ipt2 + 1, ipt1 + 1) * h_2Dtrue[i]->GetBinError(ipt2 + 1, ipt1 + 1);
         h_2D_unsymtrue[i]->SetBinContent(ipt1 + 1, ipt2 + 1, bincounttrue);
         h_2D_unsymtrue[i]->SetBinError(ipt1 + 1, ipt2 + 1, std::sqrt(binerrtrue));
       }
