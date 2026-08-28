@@ -165,6 +165,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		std::cout << "Bin " << i << " " << pt_bins[i] << std::endl;
 	}
 
+	// truth dijet / response matrix phase space, aligned to bin edges 9 and 3 (~18.2836, ~8.20847)
+	const float leadpttrue_min = pt_bins[9];
+	const float subpttrue_min = pt_bins[3];
+
 	// cent binning
 	int cent_N = 4;
 	Float_t cent_bins[] = {0, 1, 2, 3, 4};
@@ -380,7 +384,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					}
 				}
 				// truth jet cuts
-				if (subpttrue >= 7 && leadpttrue >= 14 && fabs(leadetatrue) < 0.7 && fabs(subetatrue) < 0.7)
+				if (subpttrue >= subpttrue_min && leadpttrue >= leadpttrue_min && fabs(leadetatrue) < 0.7 && fabs(subetatrue) < 0.7)
 				{
 					// check if truth is back to back
 					float dPhi = leadphi - subphi;
