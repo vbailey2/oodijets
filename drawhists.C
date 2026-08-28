@@ -119,6 +119,7 @@ void drawhists(int isunfold = 0)
 		{
 			c2->cd();
 			pad1->cd();
+			pad1->Clear();
 		}
 		else
 			c->cd();
@@ -168,6 +169,7 @@ void drawhists(int isunfold = 0)
 		if (isunfold)
 		{
 			pad2->cd();
+			pad2->Clear();
 			for (int icent = 0; icent < ncent; icent++)
 			{
 				TGraphAsymmErrors *gratio = (TGraphAsymmErrors *)gpp->Clone(Form("g_ratio_cent%i_pt%i", icent, ipt));
@@ -231,9 +233,6 @@ void drawhists(int isunfold = 0)
 			ppline->Draw("SAME");
 
 			c2->Print(Form("plots/xj_pt%i_%s.pdf", ipt, sunfold.c_str()));
-			c2->Clear();
-			pad1->Draw();
-			pad2->Draw();
 		}
 		else
 		{
