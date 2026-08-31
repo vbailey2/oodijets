@@ -165,9 +165,13 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		std::cout << "Bin " << i << " " << pt_bins[i] << std::endl;
 	}
 
-	// truth dijet / response matrix phase space, aligned to bin edges 9 and 3 (~18.2836, ~8.20847)
-	const float leadpttrue_min = pt_bins[9];
-	const float subpttrue_min = pt_bins[3];
+	// three-tier pt phase space (truth -> reco -> measure), aligned to bin edges
+	const float truth_leadpt_min = pt_bins[6];	  // ~12.2507
+	const float truth_subpt_min = pt_bins[0];	  // ~5.5
+	const float reco_leadpt_min = pt_bins[9];	  // ~18.2836
+	const float reco_subpt_min = pt_bins[3];	  // ~8.20847
+	const float measure_leadpt_min = pt_bins[10]; // ~20.8943
+	const float measure_subpt_min = pt_bins[4];	  // ~9.38056
 
 	// cent binning
 	int cent_N = 4;
@@ -316,8 +320,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			if (!(!ismc && (fabs(leadtime) > 6 || fabs(leadtime - subtime) > 3)))
 			{
 
-				// jet pt cuts
-				if (subpt >= 12)
+				// jet pt and eta cuts: measure tier on real data, reco tier on the MC reconstructed simulation
+				float this_leadpt_min = ismc ? reco_leadpt_min : measure_leadpt_min;
+				float this_subpt_min = ismc ? reco_subpt_min : measure_subpt_min;
+				if (leadpt >= this_leadpt_min && subpt >= this_subpt_min && fabs(leadeta) < 0.7 && fabs(subeta) < 0.7)
 				{
 
 					// check if back to back
@@ -384,7 +390,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					}
 				}
 				// truth jet cuts
-				if (subpttrue >= subpttrue_min && leadpttrue >= leadpttrue_min && fabs(leadetatrue) < 0.7 && fabs(subetatrue) < 0.7)
+				if (subpttrue >= truth_subpt_min && leadpttrue >= truth_leadpt_min && fabs(leadetatrue) < 0.7 && fabs(subetatrue) < 0.7)
 				{
 					// check if truth is back to back
 					float dPhi = leadphi - subphi;
