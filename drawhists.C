@@ -312,7 +312,7 @@ void drawhists(int isunfold = 0)
 		c->cd();
 		for (int ipt = 0; ipt < npt; ipt++)
 		{
-			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_dphi->GetYaxis()->GetBinLowEdge(ipt + 1), h_dphi->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
 			for (int icent = 0; icent < ncent; icent++)
 			{
 				h_dphi->GetYaxis()->SetRange(ipt + 1, ipt + 1);
