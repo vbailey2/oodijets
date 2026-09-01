@@ -23,9 +23,6 @@ void drawhists(int isunfold = 0)
 	}
 	TFile *f = new TFile(fname.c_str(), "READ");
 	TFile *fproj = new TFile(projname.c_str(), "READ");
-	TFile *fpp = nullptr;
-	if (isunfold)
-		fpp = new TFile("hists/final_plots_pp_r04.root", "READ");
 
 	TCanvas *c = new TCanvas("c", "c", 700, 700);
 
@@ -149,17 +146,6 @@ void drawhists(int isunfold = 0)
 			hleg->AddEntry(h_xj1D[icent][ipt], cent_str[icent].c_str(), "p");
 		}
 
-		TGraphAsymmErrors *gpp = nullptr;
-		if (isunfold)
-		{
-			gpp = (TGraphAsymmErrors *)fpp->Get(Form("g_final_xj_statistics_%d_1", ipt));
-			gpp->SetMarkerStyle(24);
-			gpp->SetMarkerColor(kBlack);
-			gpp->SetLineColor(kBlack);
-			gpp->Draw("P SAME");
-			hleg->AddEntry(gpp, "pp", "p");
-		}
-
 		leg->Draw();
 		cleg->Draw();
 		hleg->Draw();
@@ -175,65 +161,38 @@ void drawhists(int isunfold = 0)
 			pad2->Clear();
 			for (int icent = 0; icent < ncent; icent++)
 			{
-				TGraphAsymmErrors *gratio = (TGraphAsymmErrors *)gpp->Clone(Form("g_ratio_cent%i_pt%i", icent, ipt));
-				int npts = gratio->GetN();
-				for (int ip = 0; ip < npts; ip++)
-				{
-					double x, ypp;
-					gratio->GetPoint(ip, x, ypp);
-					int bin = h_xj1D[icent][ipt]->GetXaxis()->FindBin(x);
-					double yhist = h_xj1D[icent][ipt]->GetBinContent(bin);
-					double ehist = h_xj1D[icent][ipt]->GetBinError(bin);
-					double eyppLow = gratio->GetErrorYlow(ip);
-					double eyppHigh = gratio->GetErrorYhigh(ip);
+				TH1D *hRatio = (TH1D *)h_xj1D[icent][ipt]->Clone(Form("h_ratio_cent%i_pt%i", icent, ipt));
+				hRatio->Divide(h_xj1D[3][ipt]);
+				hRatio->SetTitle("");
 
-					if (ypp == 0 || yhist == 0)
-					{
-						gratio->SetPoint(ip, x, 0);
-						gratio->SetPointEYlow(ip, 0);
-						gratio->SetPointEYhigh(ip, 0);
-						continue;
-					}
+				hRatio->SetMarkerColor(colors[icent]);
+				hRatio->SetLineColor(colors[icent]);
 
-					double ratio = yhist / ypp;
-					double relErrHist = ehist / yhist;
-					double errLow = ratio * std::sqrt(relErrHist * relErrHist + (eyppLow / ypp) * (eyppLow / ypp));
-					double errHigh = ratio * std::sqrt(relErrHist * relErrHist + (eyppHigh / ypp) * (eyppHigh / ypp));
+				hRatio->SetMinimum(0.);
+				hRatio->SetMaximum(2.);
+				hRatio->GetXaxis()->SetRangeUser(0.2, 1);
+				hRatio->GetXaxis()->SetTitle("x_{J}");
+				hRatio->GetXaxis()->SetTitleSize(0.12);
+				hRatio->GetXaxis()->SetTitleOffset(1.0);
+				hRatio->GetXaxis()->SetLabelSize(0.10);
+				hRatio->GetXaxis()->SetTickLength(0.07);
 
-					gratio->SetPoint(ip, x, ratio);
-					gratio->SetPointEYlow(ip, errLow);
-					gratio->SetPointEYhigh(ip, errHigh);
-				}
-
-				gratio->SetMarkerColor(colors[icent]);
-				gratio->SetLineColor(colors[icent]);
-				gratio->SetMarkerStyle(20);
-
-				gratio->SetTitle("");
-				gratio->GetYaxis()->SetRangeUser(0, 2);
-				gratio->GetXaxis()->SetLimits(0.2, 1);
-				gratio->GetXaxis()->SetTitle("x_{J}");
-				gratio->GetXaxis()->SetTitleSize(0.12);
-				gratio->GetXaxis()->SetTitleOffset(1.0);
-				gratio->GetXaxis()->SetLabelSize(0.10);
-				gratio->GetXaxis()->SetTickLength(0.07);
-
-				gratio->GetYaxis()->SetTitle("AA/pp");
-				gratio->GetYaxis()->SetTitleSize(0.12);
-				gratio->GetYaxis()->SetTitleOffset(0.45);
-				gratio->GetYaxis()->SetLabelSize(0.10);
-				gratio->GetYaxis()->SetNdivisions(505);
+				hRatio->GetYaxis()->SetTitle(Form("Ratio to %s", cent_str[3].c_str()));
+				hRatio->GetYaxis()->SetTitleSize(0.12);
+				hRatio->GetYaxis()->SetTitleOffset(0.45);
+				hRatio->GetYaxis()->SetLabelSize(0.10);
+				hRatio->GetYaxis()->SetNdivisions(505);
 
 				if (icent == 0)
-					gratio->Draw("AP");
+					hRatio->Draw();
 				else
-					gratio->Draw("P SAME");
+					hRatio->Draw("SAME");
 			}
 
-			TLine *ppline = new TLine(0.2, 1.0, 1.0, 1.0);
-			ppline->SetLineColor(kBlack);
-			ppline->SetLineStyle(2);
-			ppline->Draw("SAME");
+			TLine *ratioline = new TLine(0.2, 1.0, 1.0, 1.0);
+			ratioline->SetLineColor(kBlack);
+			ratioline->SetLineStyle(2);
+			ratioline->Draw("SAME");
 
 			c2->Print(Form("plots/xj_pt%i_%s.pdf", ipt, sunfold.c_str()));
 		}
