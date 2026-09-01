@@ -82,6 +82,9 @@ void drawhists(int isunfold = 0)
 			h_xjnoproj[i]->SetName(Form("h_xjnoproj%i", i));
 			double bincount[3][19] = {};
 			double binerr[3][19] = {};
+			// h_xj[i] only keeps the highest-xj bins (see projectDijets.C's nxj_final trim);
+			// shift into h_xjnoproj3D's full, untrimmed xj axis by the number of dropped low-xj bins
+			int xjoffset = h_xjnoproj3D->GetNbinsX() - h_xj[i]->GetNbinsX();
 			for (int ifinal = 0; ifinal < h_xj[i]->GetNbinsY(); ifinal++)
 			{
 				int finlow = h_xj[i]->GetYaxis()->GetBinLowEdge(ifinal + 1);
@@ -95,8 +98,8 @@ void drawhists(int isunfold = 0)
 						if (ptlow >= finlow && ptlow < finhigh)
 						{
 							// if it is then add to that bin count
-							bincount[ifinal][ix] += h_xjnoproj3D->GetBinContent(ix + 1, ipt + 1, i + 1);
-							binerr[ifinal][ix] += h_xjnoproj3D->GetBinError(ix + 1, ipt + 1, i + 1) * h_xjnoproj3D->GetBinError(ix + 1, ipt + 1, i + 1);
+							bincount[ifinal][ix] += h_xjnoproj3D->GetBinContent(ix + 1 + xjoffset, ipt + 1, i + 1);
+							binerr[ifinal][ix] += h_xjnoproj3D->GetBinError(ix + 1 + xjoffset, ipt + 1, i + 1) * h_xjnoproj3D->GetBinError(ix + 1 + xjoffset, ipt + 1, i + 1);
 						}
 					}
 				}
