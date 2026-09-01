@@ -119,8 +119,8 @@ void drawunfoldclosure(bool ishalf = 1)
       hRatio->Divide(hTrue1D[icent][ipt]);
       hRatio->SetTitle("");
 
-      hRatio->SetMinimum(0.0);
-      hRatio->SetMaximum(2.0);
+      hRatio->SetMinimum(0.8);
+      hRatio->SetMaximum(1.2);
       hRatio->GetXaxis()->SetTitle("x_{J}");
       hRatio->GetXaxis()->SetTitleSize(0.12);
       hRatio->GetXaxis()->SetTitleOffset(1.0);
