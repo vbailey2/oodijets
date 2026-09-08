@@ -80,11 +80,30 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
 	iy = g % nBinsY + 1;
 }
 
-void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true)
+void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usembdreweight = false)
 {
 	TH1::SetDefaultSumw2();
 	TH2::SetDefaultSumw2();
 	TH3::SetDefaultSumw2();
+
+	TH1D *h_mbd_charge_sum_ratio = nullptr;
+	if (ismc && usembdreweight)
+	{
+		TFile *frw = TFile::Open("hists/centrality_mbd_reweight.root", "READ");
+		if (!frw || frw->IsZombie())
+		{
+			std::cerr << "ERROR: cannot open hists/centrality_mbd_reweight.root for mbd reweighting" << std::endl;
+			std::exit(1);
+		}
+		h_mbd_charge_sum_ratio = (TH1D *)frw->Get("h_mbd_charge_sum_ratio");
+		if (!h_mbd_charge_sum_ratio)
+		{
+			std::cerr << "ERROR: missing h_mbd_charge_sum_ratio in hists/centrality_mbd_reweight.root" << std::endl;
+			std::exit(1);
+		}
+		h_mbd_charge_sum_ratio->SetDirectory(nullptr);
+		frw->Close();
+	}
 
 	TFile *f = new TFile(infile.c_str());
 	TTree *t = (TTree *)f->Get("tree");
@@ -199,6 +218,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	TH3F *h_xj = new TH3F("h_xj", "", xj_N, xj_bins, pt_N, pt_bins, cent_N, cent_bins);
 	TH3F *h_pt1pt2 = new TH3F("h_pt1pt2", "", pt_N, pt_bins, pt_N, pt_bins, cent_N, cent_bins);
 
+	TH1D *h_centrality = new TH1D("h_centrality", "", cent_N, -0.5, cent_N - 0.5);
+	TH1D *h_mbd_charge_sum = new TH1D("h_mbd_charge_sum", "", 200, 0, 200);
+
 	// only filled in MC
 	TH2D *hTrue2D[cent_N];
 	TH2D *hMeas2D[cent_N];
@@ -278,6 +300,12 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			njets = njetsdata;
 
 		h_counting[centbin]->Fill(1);
+		h_centrality->Fill(centbin);
+		h_mbd_charge_sum->Fill(mbdcharge);
+
+		// apply the data/MC mbd_charge_sum reweighting on top of the existing MC weight
+		if (ismc && usembdreweight)
+			weight *= h_mbd_charge_sum_ratio->GetBinContent(h_mbd_charge_sum_ratio->FindBin(mbdcharge));
 
 		// loop through jets to get lead & sublead
 		float leadpt = 0;
@@ -663,6 +691,8 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	h_dphi->Write();
 	h_xj->Write();
 	h_pt1pt2->Write();
+	h_centrality->Write();
+	h_mbd_charge_sum->Write();
 
 	for (int i = 0; i < cent_N; i++)
 	{
