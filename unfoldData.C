@@ -19,7 +19,7 @@ void unfoldData(int nIterations = 2)
   TH2::SetDefaultSumw2();
   TH3::SetDefaultSumw2();
 
-  TFile *fMC = new TFile("hists/histMC.root", "READ");
+  TFile *fMC = new TFile("hists/histMC_reweight.root", "READ");
   TFile *fData = new TFile("hists/hist-full.root", "READ");
   TH3F *h_xj_bins = (TH3F *)fMC->Get("h_xj");
   TH3F *h_pt1pt2 = (TH3F *)fMC->Get("h_pt1pt2");
