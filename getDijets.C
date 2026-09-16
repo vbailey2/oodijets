@@ -2,66 +2,13 @@
 
 const int nCentBins = 4;
 double centbins[nCentBins + 1] = {0, 20, 40, 60, 80};
-double mbdcharge_boundaries[nCentBins + 1] = {200, 80.3746, 47.2647, 26.1444, 12.8285};
-double mbdcharge_boundaries_mc[nCentBins + 1] = {200, 80.4934, 47.2058, 25.9975, 12.3982};
 std::string cent_str[nCentBins] = {"0-20%", "20-40%", "40-60%", "60-80%"};
 
-inline const char *DefaultMBMbdScaleFile()
-{
-	return "/gpfs/mnt/gpfs02/sphenix/user/jpark4/Analysis/Oxygen/sPHENIX-OxygenAnalysis/Corrections/mb_mbd_scale_fit.root";
-}
-
-inline double GetMbdChargeSumScaleMC(const char *scale_file = DefaultMBMbdScaleFile())
-{
-	static TString cached_scale_file = "";
-	static double cached_scale = 1.;
-
-	if (cached_scale_file != scale_file)
-	{
-		cached_scale_file = scale_file;
-		cached_scale = 1.;
-
-		TFile *fscale = TFile::Open(scale_file, "READ");
-		if (!fscale || fscale->IsZombie())
-		{
-			std::cerr << "ERROR: cannot open MBD scale file " << scale_file << std::endl;
-			if (fscale)
-				fscale->Close();
-			std::exit(1);
-		}
-
-		TParameter<double> *best_scale =
-			dynamic_cast<TParameter<double> *>(fscale->Get("best_scale_value"));
-		if (!best_scale)
-		{
-			std::cerr << "ERROR: missing best_scale_value in " << scale_file << std::endl;
-			fscale->Close();
-			std::exit(1);
-		}
-
-		cached_scale = best_scale->GetVal();
-		fscale->Close();
-	}
-
-	return cached_scale;
-}
-
-auto FindCentBinData = [](float mbd_charge_sum) -> int
+auto FindCentBin = [](float centbin_pct) -> int
 {
 	for (int i = 0; i < nCentBins; i++)
 	{
-		if (mbd_charge_sum < mbdcharge_boundaries[i] && mbd_charge_sum >= mbdcharge_boundaries[i + 1])
-			return i;
-	}
-	return -1;
-};
-
-auto FindCentBinMC = [](float mbd_charge_sum) -> int
-{
-	const double mbd_charge_sum_scaled = mbd_charge_sum * GetMbdChargeSumScaleMC();
-	for (int i = 0; i < nCentBins; i++)
-	{
-		if (mbd_charge_sum_scaled < mbdcharge_boundaries_mc[i] && mbd_charge_sum_scaled >= mbdcharge_boundaries_mc[i + 1])
+		if (centbin_pct >= centbins[i] && centbin_pct < centbins[i + 1])
 			return i;
 	}
 	return -1;
@@ -118,6 +65,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t time[10];
 	Float_t mbdtime;
 	Float_t mbdcharge;
+	Float_t centbin_branch;
 
 	Int_t ntruthjets;
 	Float_t trutheta[10];
@@ -128,6 +76,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 
 	t->SetBranchAddress("mbd_mean_time", &mbdtime);
 	t->SetBranchAddress("mbd_charge_sum", &mbdcharge);
+	t->SetBranchAddress("centbin", &centbin_branch);
 
 	if (!ismc)
 	{
@@ -286,11 +235,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		int half = i % 2;
 
 		// event level cuts
-		int centbin = -999;
-		if (!ismc)
-			centbin = FindCentBinData(mbdcharge);
-		else
-			centbin = FindCentBinMC(mbdcharge);
+		int centbin = FindCentBin(centbin_branch);
 		if (centbin < 0)
 			continue;
 		int njets = 0;
