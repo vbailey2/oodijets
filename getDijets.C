@@ -35,12 +35,13 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	TH3::SetDefaultSumw2();
 
 	TH1D *h_totalcalo_et_ratio = nullptr;
+	TH1D *h_vz_ratio = nullptr;
 	if (ismc && usetotalcaloreweight)
 	{
 		TFile *frw = TFile::Open("hists/centrality_mbd_reweight.root", "READ");
 		if (!frw || frw->IsZombie())
 		{
-			std::cerr << "ERROR: cannot open hists/centrality_mbd_reweight.root for totalcalo_et reweighting" << std::endl;
+			std::cerr << "ERROR: cannot open hists/centrality_mbd_reweight.root for totalcalo_et/vz reweighting" << std::endl;
 			std::exit(1);
 		}
 		h_totalcalo_et_ratio = (TH1D *)frw->Get("h_totalcalo_et_ratio");
@@ -50,6 +51,14 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			std::exit(1);
 		}
 		h_totalcalo_et_ratio->SetDirectory(nullptr);
+
+		h_vz_ratio = (TH1D *)frw->Get("h_vz_ratio");
+		if (!h_vz_ratio)
+		{
+			std::cerr << "ERROR: missing h_vz_ratio in hists/centrality_mbd_reweight.root" << std::endl;
+			std::exit(1);
+		}
+		h_vz_ratio->SetDirectory(nullptr);
 		frw->Close();
 	}
 
@@ -68,6 +77,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t mbdcharge;
 	Float_t centbin_branch;
 	Float_t totalcalo_et;
+	Float_t vz;
 
 	Int_t ntruthjets;
 	Float_t trutheta[10];
@@ -81,6 +91,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	t->SetBranchAddress("mbd_charge_sum", &mbdcharge);
 	t->SetBranchAddress("centbin", &centbin_branch);
 	t->SetBranchAddress("totalcalo_et", &totalcalo_et);
+	t->SetBranchAddress("vz", &vz);
 
 	if (!ismc)
 	{
@@ -175,6 +186,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	TH1D *h_centrality = new TH1D("h_centrality", "", cent_N, -0.5, cent_N - 0.5);
 	TH1D *h_mbd_charge_sum = new TH1D("h_mbd_charge_sum", "", 200, 0, 200);
 	TH1D *h_totalcalo_et = new TH1D("h_totalcalo_et", "", 300, 0, 3000);
+	TH1D *h_vz = new TH1D("h_vz", "", 120, -60, 60);
 
 	// only filled in MC
 	TH2D *hTrue2D[cent_N];
@@ -254,12 +266,16 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		h_centrality->Fill(centbin);
 		h_mbd_charge_sum->Fill(mbdcharge);
 		h_totalcalo_et->Fill(totalcalo_et);
+		h_vz->Fill(vz);
 
-		// apply the truth sumET smearing weight, and the data/MC totalcalo_et reweighting, on top of the existing MC weight
+		// apply the truth sumET smearing weight, and the data/MC totalcalo_et and vz reweighting, on top of the existing MC weight
 		if (ismc)
 			weight *= GetTruthSumETSmearWeight(truth_sumet);
 		if (ismc && usetotalcaloreweight)
+		{
 			weight *= h_totalcalo_et_ratio->GetBinContent(h_totalcalo_et_ratio->FindBin(totalcalo_et));
+			weight *= h_vz_ratio->GetBinContent(h_vz_ratio->FindBin(vz));
+		}
 
 		// loop through jets to get lead & sublead
 		float leadpt = 0;
@@ -648,6 +664,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	h_centrality->Write();
 	h_mbd_charge_sum->Write();
 	h_totalcalo_et->Write();
+	h_vz->Write();
 
 	for (int i = 0; i < cent_N; i++)
 	{

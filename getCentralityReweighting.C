@@ -89,6 +89,10 @@ void getCentralityReweighting()
 	h_totalcalo_et_data->SetName("h_totalcalo_et_data");
 	TH1D *h_totalcalo_et_mc = (TH1D *)fMC->Get("h_totalcalo_et");
 	h_totalcalo_et_mc->SetName("h_totalcalo_et_mc");
+	TH1D *h_vz_data = (TH1D *)fData->Get("h_vz");
+	h_vz_data->SetName("h_vz_data");
+	TH1D *h_vz_mc = (TH1D *)fMC->Get("h_vz");
+	h_vz_mc->SetName("h_vz_mc");
 
 	h_centrality_data->Scale(1. / h_centrality_data->Integral(), "width");
 	h_centrality_mc->Scale(1. / h_centrality_mc->Integral(), "width");
@@ -96,6 +100,8 @@ void getCentralityReweighting()
 	h_mbd_charge_sum_mc->Scale(1. / h_mbd_charge_sum_mc->Integral(), "width");
 	h_totalcalo_et_data->Scale(1. / h_totalcalo_et_data->Integral(), "width");
 	h_totalcalo_et_mc->Scale(1. / h_totalcalo_et_mc->Integral(), "width");
+	h_vz_data->Scale(1. / h_vz_data->Integral(), "width");
+	h_vz_mc->Scale(1. / h_vz_mc->Integral(), "width");
 
 	TH1D *h_centrality_ratio = (TH1D *)h_centrality_data->Clone("h_centrality_ratio");
 	h_centrality_ratio->Divide(h_centrality_mc);
@@ -106,13 +112,18 @@ void getCentralityReweighting()
 	TH1D *h_totalcalo_et_ratio = (TH1D *)h_totalcalo_et_data->Clone("h_totalcalo_et_ratio");
 	h_totalcalo_et_ratio->Divide(h_totalcalo_et_mc);
 
+	TH1D *h_vz_ratio = (TH1D *)h_vz_data->Clone("h_vz_ratio");
+	h_vz_ratio->Divide(h_vz_mc);
+
 	drawDataMCRatio(h_centrality_data, h_centrality_mc, h_centrality_ratio, "Centrality bin", "datamc_centrality");
 	drawDataMCRatio(h_mbd_charge_sum_data, h_mbd_charge_sum_mc, h_mbd_charge_sum_ratio, "mbd_charge_sum", "datamc_mbd_charge_sum");
 	drawDataMCRatio(h_totalcalo_et_data, h_totalcalo_et_mc, h_totalcalo_et_ratio, "totalcalo_et", "datamc_totalcalo_et");
+	drawDataMCRatio(h_vz_data, h_vz_mc, h_vz_ratio, "v_{z} [cm]", "datamc_vz");
 
 	TFile *fout = new TFile("hists/centrality_mbd_reweight.root", "RECREATE");
 	h_centrality_ratio->Write();
 	h_mbd_charge_sum_ratio->Write();
 	h_totalcalo_et_ratio->Write();
+	h_vz_ratio->Write();
 	std::cout << "all done" << std::endl;
 }
