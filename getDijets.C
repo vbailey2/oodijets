@@ -75,7 +75,8 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t time[10];
 	Float_t mbdtime;
 	Float_t mbdcharge;
-	Float_t centbin_branch;
+	Float_t centbin_branch_data;
+	Int_t centbin_branch_mc;
 	Float_t totalcalo_et;
 	Float_t vz;
 
@@ -89,12 +90,12 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 
 	t->SetBranchAddress("mbd_mean_time", &mbdtime);
 	t->SetBranchAddress("mbd_charge_sum", &mbdcharge);
-	t->SetBranchAddress("centbin", &centbin_branch);
 	t->SetBranchAddress("totalcalo_et", &totalcalo_et);
 	t->SetBranchAddress("vz", &vz);
 
 	if (!ismc)
 	{
+		t->SetBranchAddress("centbin", &centbin_branch_data);
 		t->SetBranchAddress("nJetsSub_r04", &njetsdata);
 		t->SetBranchAddress("jet_sub_r04_eta", &eta);
 		t->SetBranchAddress("jet_sub_r04_phi", &phi);
@@ -106,6 +107,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 
 	if (ismc)
 	{
+		t->SetBranchAddress("centbin", &centbin_branch_mc);
 		t->SetBranchAddress("nJetsReco_r04", &njetsmc);
 		t->SetBranchAddress("jet_reco_r04_eta", &eta);
 		t->SetBranchAddress("jet_reco_r04_phi", &phi);
@@ -253,7 +255,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		int half = i % 2;
 
 		// event level cuts
-		int centbin = FindCentBin(centbin_branch);
+		int centbin = FindCentBin(ismc ? (float)centbin_branch_mc : centbin_branch_data);
 		if (centbin < 0)
 			continue;
 		int njets = 0;
