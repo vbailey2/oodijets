@@ -106,7 +106,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t truthe[10];
 	Float_t truthpt[10];
 	Float_t truth_sumet;
-	Int_t sample;
+	Short_t sample;
 	Double_t weight = 1.;
 
 	t->SetBranchAddress("mbd_mean_time", &mbdtime);
@@ -141,6 +141,11 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		t->SetBranchAddress("jet_truth_r04_phi", &truthphi);
 		t->SetBranchAddress("jet_truth_r04_pt", &truthpt);
 		t->SetBranchAddress("totaltruth_et", &truth_sumet);
+		if (!t->GetBranch("sample"))
+		{
+			std::cerr << "ERROR: tree has no 'sample' branch" << std::endl;
+			std::exit(1);
+		}
 		t->SetBranchAddress("sample", &sample);
 		t->SetBranchAddress("weight", &weight);
 	}
