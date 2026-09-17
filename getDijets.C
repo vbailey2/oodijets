@@ -28,7 +28,7 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
 	iy = g % nBinsY + 1;
 }
 
-void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usetotalcaloreweight = false)
+void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usetotalcaloreweight = false, int sample_count_threshold = 0)
 {
 	TH1::SetDefaultSumw2();
 	TH2::SetDefaultSumw2();
@@ -62,6 +62,26 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		frw->Close();
 	}
 
+	// per-(gReco, gTrue, sample) raw MC statistics from the first pass, used to gate response.Fill() on the second pass
+	TH3D *h_sample_counts_prev = nullptr;
+	if (ismc && usetotalcaloreweight)
+	{
+		TFile *fprev = TFile::Open("hists/histMC.root", "READ");
+		if (!fprev || fprev->IsZombie())
+		{
+			std::cerr << "ERROR: cannot open hists/histMC.root for the first-pass sample counts" << std::endl;
+			std::exit(1);
+		}
+		h_sample_counts_prev = (TH3D *)fprev->Get("h_sample_counts");
+		if (!h_sample_counts_prev)
+		{
+			std::cerr << "ERROR: missing h_sample_counts in hists/histMC.root" << std::endl;
+			std::exit(1);
+		}
+		h_sample_counts_prev->SetDirectory(nullptr);
+		fprev->Close();
+	}
+
 	TFile *f = new TFile(infile.c_str());
 	TTree *t = (TTree *)f->Get("tree");
 
@@ -86,6 +106,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t truthe[10];
 	Float_t truthpt[10];
 	Float_t truth_sumet;
+	Int_t sample;
 	Double_t weight = 1.;
 
 	t->SetBranchAddress("mbd_mean_time", &mbdtime);
@@ -120,6 +141,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		t->SetBranchAddress("jet_truth_r04_phi", &truthphi);
 		t->SetBranchAddress("jet_truth_r04_pt", &truthpt);
 		t->SetBranchAddress("totaltruth_et", &truth_sumet);
+		t->SetBranchAddress("sample", &sample);
 		t->SetBranchAddress("weight", &weight);
 	}
 
@@ -217,6 +239,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	responseB.reserve(nCentBins);
 
 	int nGlobalBins = pt_N * pt_N;
+
+	// raw (unweighted) MC counts per (gReco, gTrue) migration cell and per sample (sample = 0-8)
+	TH3D *h_sample_counts = new TH3D("h_sample_counts", "", nGlobalBins, 0.5, nGlobalBins + 0.5, nGlobalBins, 0.5, nGlobalBins + 0.5, 9, -0.5, 8.5);
+
 	for (int i = 0; i < cent_N; i++)
 	{
 		hTrue2D[i] = new TH2D(Form("hTrue2D%i", i), "Truth;x;y", pt_N, pt_bins, pt_N, pt_bins);
@@ -474,6 +500,17 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			int gTrue = GlobalBin(ixTrue, iyTrue, pt_N);
 			int gTruesym = GlobalBin(iyTrue, ixTrue, pt_N);
 
+			// on the second pass, only trust a (gReco, gTrue) migration cell for response training if the
+			// first pass saw more than sample_count_threshold raw MC entries in that cell for this sample
+			auto passCell = [&](int greco, int gtrue) -> bool
+			{
+				return !usetotalcaloreweight ||
+					   h_sample_counts_prev->GetBinContent(
+						   h_sample_counts_prev->GetXaxis()->FindBin(greco),
+						   h_sample_counts_prev->GetYaxis()->FindBin(gtrue),
+						   h_sample_counts_prev->GetZaxis()->FindBin(sample)) > sample_count_threshold;
+			};
+
 			// std::cout<<"is reco "<<recodijet<<" is truth "<<truthdijet<<" Match? "<<ismatch<<std::endl;
 			if (ismatch)
 			{
@@ -486,16 +523,33 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 				hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
 				hTrue1D[centbin]->Fill(gTrue, weight * 0.5);
 				hTrue1D[centbin]->Fill(gTruesym, weight * 0.5);
-				// if swapmatch, the reco lead/sublead pt bin actually corresponds to the truth sublead/lead pt bin
+
+				// raw (unweighted) per-sample migration-cell statistics, filled once per event
 				if (!swapmatch)
 				{
-					response[centbin].Fill(gReco, gTrue, weight * 0.5);
-					response[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
+					h_sample_counts->Fill(gReco, gTrue, sample);
+					h_sample_counts->Fill(gRecosym, gTruesym, sample);
 				}
 				else
 				{
-					response[centbin].Fill(gReco, gTruesym, weight * 0.5);
-					response[centbin].Fill(gRecosym, gTrue, weight * 0.5);
+					h_sample_counts->Fill(gReco, gTruesym, sample);
+					h_sample_counts->Fill(gRecosym, gTrue, sample);
+				}
+
+				// if swapmatch, the reco lead/sublead pt bin actually corresponds to the truth sublead/lead pt bin
+				if (!swapmatch)
+				{
+					if (passCell(gReco, gTrue))
+						response[centbin].Fill(gReco, gTrue, weight * 0.5);
+					if (passCell(gRecosym, gTruesym))
+						response[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
+				}
+				else
+				{
+					if (passCell(gReco, gTruesym))
+						response[centbin].Fill(gReco, gTruesym, weight * 0.5);
+					if (passCell(gRecosym, gTrue))
+						response[centbin].Fill(gRecosym, gTrue, weight * 0.5);
 				}
 
 				if (half == 0)
@@ -512,13 +566,17 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hTrue1DA[centbin]->Fill(gTruesym, weight * 0.5);
 					if (!swapmatch)
 					{
-						responseA[centbin].Fill(gReco, gTrue, weight * 0.5);
-						responseA[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
+						if (passCell(gReco, gTrue))
+							responseA[centbin].Fill(gReco, gTrue, weight * 0.5);
+						if (passCell(gRecosym, gTruesym))
+							responseA[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
 					}
 					else
 					{
-						responseA[centbin].Fill(gReco, gTruesym, weight * 0.5);
-						responseA[centbin].Fill(gRecosym, gTrue, weight * 0.5);
+						if (passCell(gReco, gTruesym))
+							responseA[centbin].Fill(gReco, gTruesym, weight * 0.5);
+						if (passCell(gRecosym, gTrue))
+							responseA[centbin].Fill(gRecosym, gTrue, weight * 0.5);
 					}
 				}
 				else
@@ -535,13 +593,17 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hTrue1DB[centbin]->Fill(gTruesym, weight * 0.5);
 					if (!swapmatch)
 					{
-						responseB[centbin].Fill(gReco, gTrue, weight * 0.5);
-						responseB[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
+						if (passCell(gReco, gTrue))
+							responseB[centbin].Fill(gReco, gTrue, weight * 0.5);
+						if (passCell(gRecosym, gTruesym))
+							responseB[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
 					}
 					else
 					{
-						responseB[centbin].Fill(gReco, gTruesym, weight * 0.5);
-						responseB[centbin].Fill(gRecosym, gTrue, weight * 0.5);
+						if (passCell(gReco, gTruesym))
+							responseB[centbin].Fill(gReco, gTruesym, weight * 0.5);
+						if (passCell(gRecosym, gTrue))
+							responseB[centbin].Fill(gRecosym, gTrue, weight * 0.5);
 					}
 				}
 
@@ -667,6 +729,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	h_mbd_charge_sum->Write();
 	h_totalcalo_et->Write();
 	h_vz->Write();
+	h_sample_counts->Write();
 
 	for (int i = 0; i < cent_N; i++)
 	{
