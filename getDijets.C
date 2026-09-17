@@ -1,3 +1,4 @@
+#include "truth_sumet_weight.h"
 #include <cmath>
 
 const int nCentBins = 4;
@@ -72,6 +73,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t truthphi[10];
 	Float_t truthe[10];
 	Float_t truthpt[10];
+	Float_t truth_sumet;
 	Double_t weight = 1.;
 
 	t->SetBranchAddress("mbd_mean_time", &mbdtime);
@@ -102,6 +104,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		t->SetBranchAddress("jet_truth_r04_eta", &trutheta);
 		t->SetBranchAddress("jet_truth_r04_phi", &truthphi);
 		t->SetBranchAddress("jet_truth_r04_pt", &truthpt);
+		t->SetBranchAddress("totaltruth_et", &truth_sumet);
 		t->SetBranchAddress("weight", &weight);
 	}
 
@@ -249,6 +252,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		h_mbd_charge_sum->Fill(mbdcharge);
 
 		// apply the data/MC mbd_charge_sum reweighting on top of the existing MC weight
+		if(ismc) weight *= GetTruthSumETSmearWeight(truth_sumet);
 		if (ismc && usembdreweight)
 			weight *= h_mbd_charge_sum_ratio->GetBinContent(h_mbd_charge_sum_ratio->FindBin(mbdcharge));
 
