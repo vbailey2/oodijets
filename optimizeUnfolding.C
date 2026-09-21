@@ -7,50 +7,53 @@ void optimizeUnfolding()
   const int nIterMax = 8;
   const int nIter = nIterMax - nIterMin + 1;
 
+  // final xj-observable space (matches the pp reference's convergence check),
+  // not the raw pt1-pt2 migration matrix: read h_xj_%d from the per-iteration
+  // projections produced by projectDijets.C via rununfolddata.sh
+  const int ncent = 4;
+
   TFile *f[nIter];
   for (int i = 0; i < nIter; i++)
   {
     int iter = nIterMin + i;
-    f[i] = new TFile(Form("hists/hist-unfoldedData_iter%d.root", iter), "READ");
+    f[i] = new TFile(Form("hists/projections_unfold_iter%d.root", iter), "READ");
   }
 
-  TH3F *h_pt1pt2 = (TH3F *)f[0]->Get("h_pt1pt2");
-  int ncent = h_pt1pt2->GetNbinsZ();
-
-  // 1. sum of per-bin statistical error, and 2. quadrature sum of the bin-by-bin
+  // 1. quadrature sum of per-bin statistical error, and 2. quadrature sum of the bin-by-bin
   // difference from the previous iteration, both per iteration and centrality
   double statErrSum[nIter][ncent];
   double diffQuadSum[nIter][ncent];
 
-  TH2F *hUnfolded2D[nIter][ncent];
+  TH2F *h_xj[nIter][ncent];
   for (int i = 0; i < nIter; i++)
   {
     for (int ic = 0; ic < ncent; ic++)
     {
-      hUnfolded2D[i][ic] = (TH2F *)f[i]->Get(Form("hUnfolded2D_cent%d", ic));
+      h_xj[i][ic] = (TH2F *)f[i]->Get(Form("h_xj_%d", ic));
 
-      int nx = hUnfolded2D[i][ic]->GetNbinsX();
-      int ny = hUnfolded2D[i][ic]->GetNbinsY();
+      int nx = h_xj[i][ic]->GetNbinsX();
+      int ny = h_xj[i][ic]->GetNbinsY();
 
       double errsum = 0;
       for (int ix = 1; ix <= nx; ix++)
       {
         for (int iy = 1; iy <= ny; iy++)
         {
-          errsum += hUnfolded2D[i][ic]->GetBinError(ix, iy);
+          double err = h_xj[i][ic]->GetBinError(ix, iy);
+          errsum += err * err;
         }
       }
-      statErrSum[i][ic] = errsum;
+      statErrSum[i][ic] = std::sqrt(errsum);
 
       diffQuadSum[i][ic] = 0;
       if (i > 0)
       {
         double diffsum = 0;
-        for (int ix = 1; ix <= nx; ix++) 
+        for (int ix = 1; ix <= nx; ix++)
         {
           for (int iy = 1; iy <= ny; iy++)
           {
-            double diff = hUnfolded2D[i][ic]->GetBinContent(ix, iy) - hUnfolded2D[i - 1][ic]->GetBinContent(ix, iy);
+            double diff = h_xj[i][ic]->GetBinContent(ix, iy) - h_xj[i - 1][ic]->GetBinContent(ix, iy);
             diffsum += diff * diff;
           }
         }
