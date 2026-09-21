@@ -95,7 +95,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	Float_t time[10];
 	Float_t mbdtime;
 	Float_t mbdcharge;
-	Float_t centbin_branch_data;
+	Int_t centbin_branch_data;
 	Int_t centbin_branch_mc;
 	Float_t totalcalo_et;
 	Float_t vz;
@@ -286,7 +286,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		int half = i % 2;
 
 		// event level cuts
-		int centbin = FindCentBin(ismc ? (float)centbin_branch_mc : centbin_branch_data);
+		int centbin = FindCentBin(ismc ? (float)centbin_branch_mc : (float)centbin_branch_data);
 		if (centbin < 0)
 			continue;
 		int njets = 0;

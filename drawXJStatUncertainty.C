@@ -22,6 +22,11 @@ void drawXJStatUncertainty()
 		h_xj->GetZaxis()->SetRange(ncent, ncent);
 		TH1D *h_periph = (TH1D *)h_xj->Project3D("x");
 		h_periph->SetName(Form("h_xj_periph_pt%i", ipt));
+		if (h_periph->Integral() <= 0)
+		{
+			std::cout << "pt bin " << ipt << ": peripheral slice is empty, skipping" << std::endl;
+			continue;
+		}
 		h_periph->Scale(1. / h_periph->Integral(), "width");
 
 		// first pass: build all centrality ratios for this pt bin and track the largest error
@@ -33,6 +38,12 @@ void drawXJStatUncertainty()
 			h_xj->GetZaxis()->SetRange(icent + 1, icent + 1);
 			TH1D *h_cent = (TH1D *)h_xj->Project3D("x");
 			h_cent->SetName(Form("h_xj_cent%i_pt%i", icent, ipt));
+			if (h_cent->Integral() <= 0)
+			{
+				std::cout << "pt bin " << ipt << ", cent bin " << icent << ": slice is empty, skipping" << std::endl;
+				h_ratio[icent] = nullptr;
+				continue;
+			}
 			h_cent->Scale(1. / h_cent->Integral(), "width");
 
 			h_ratio[icent] = (TH1D *)h_cent->Clone(Form("h_xj_ratio_cent%i_pt%i", icent, ipt));
@@ -55,8 +66,12 @@ void drawXJStatUncertainty()
 		TLegend *leg = new TLegend(.65, .7, .88, .88);
 		leg->SetFillStyle(0);
 
+		bool drawnany = false;
 		for (int icent = 0; icent < ncent; icent++)
 		{
+			if (!h_ratio[icent])
+				continue;
+
 			h_ratio[icent]->SetTitle("");
 			h_ratio[icent]->SetMarkerStyle(20);
 			h_ratio[icent]->SetMarkerColor(colors[icent]);
@@ -66,10 +81,13 @@ void drawXJStatUncertainty()
 			h_ratio[icent]->GetXaxis()->SetTitle("x_{J}");
 			h_ratio[icent]->GetYaxis()->SetTitle(Form("stat. uncertainty on ratio to %s", cent_str[ncent - 1].c_str()));
 
-			if (icent == 0)
-				h_ratio[icent]->Draw();
+			if (!drawnany)
+			{
+				h_ratio[icent]->Draw("PE");
+				drawnany = true;
+			}
 			else
-				h_ratio[icent]->Draw("SAME");
+				h_ratio[icent]->Draw("PE SAME");
 			leg->AddEntry(h_ratio[icent], cent_str[icent].c_str(), "lep");
 		}
 
