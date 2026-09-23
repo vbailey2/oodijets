@@ -53,6 +53,16 @@ void drawResponseMatrix()
 		c->SetLogz();
 
 		h_response->Draw("colz");
+
+		TLegend *sphenixLeg = new TLegend(.15, .75, .45, .92);
+		sphenixLeg->SetFillStyle(0);
+		sphenixLeg->SetTextSize(0.032);
+		sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
+		sphenixLeg->AddEntry("", "Pythia8 O+O #sqrt{s_{NN}} = 200 GeV", "");
+		sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
+		sphenixLeg->AddEntry("", Form("%s",cent_str[ic].c_str()), "");
+		sphenixLeg->Draw();
+
 		c->Print(Form("plots/response_matrix_cent%i.pdf", ic));
 	}
 
