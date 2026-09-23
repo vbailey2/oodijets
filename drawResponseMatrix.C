@@ -58,7 +58,7 @@ void drawResponseMatrix()
 		sphenixLeg->SetFillStyle(0);
 		sphenixLeg->SetTextSize(0.032);
 		sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
-		sphenixLeg->AddEntry("", "Pythia8 O+O #sqrt{s_{NN}} = 200 GeV", "");
+		sphenixLeg->AddEntry("", "Pythia8 + HIJING O+O #sqrt{s_{NN}} = 200 GeV", "");
 		sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 		sphenixLeg->AddEntry("", Form("%s",cent_str[ic].c_str()), "");
 		sphenixLeg->Draw();
