@@ -6,7 +6,8 @@ void drawXJStatUncertainty()
 	SetsPhenixStyle();
 	TH1::SetDefaultSumw2();
 
-	TFile *fproj = new TFile("hists/projections.root", "READ");
+	const int finalIter = 3; // chosen from optimizeUnfolding.C's convergence result
+	TFile *fproj = new TFile(Form("hists/projections_unfold_iter%d.root", finalIter), "READ");
 	TFile *fpp = new TFile("hists/final_plots_pp_r04.root", "READ");
 
 	const int ncent = 4;
