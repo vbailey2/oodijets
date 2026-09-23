@@ -153,6 +153,44 @@ void drawunfoldclosure(bool ishalf = 1)
 
       hleg->Clear();
       cleg->Clear();
+
+      // second version of the same plot, also showing the raw (measured, pre-unfolding) xj distribution
+      pad1->cd();
+
+      hTrue1D[icent][ipt]->Draw();
+      hleg->AddEntry(hTrue1D[icent][ipt], "Truth", "p");
+
+      h_xj1D[icent][ipt]->Draw("SAME");
+      hleg->AddEntry(h_xj1D[icent][ipt], "Unfold", "p");
+
+      hMeas2D[icent]->GetYaxis()->SetRange(ipt + 1, ipt + 1);
+      hMeas1D[icent][ipt] = (TH1D *)hMeas2D[icent]->ProjectionX();
+      hMeas1D[icent][ipt]->SetName(Form("h_xjmeas_cent%i_pt%i", icent, ipt));
+      hMeas1D[icent][ipt]->SetMarkerColor(colors[icent]);
+      hMeas1D[icent][ipt]->SetMarkerStyle(24);
+      hMeas1D[icent][ipt]->SetLineColor(colors[icent]);
+      hMeas1D[icent][ipt]->GetYaxis()->SetRangeUser(0, 5);
+      hMeas1D[icent][ipt]->GetXaxis()->SetRangeUser(0.3, 1);
+      hMeas1D[icent][ipt]->GetXaxis()->SetTitle("x_{J}");
+      hMeas1D[icent][ipt]->Draw("SAME");
+      hleg->AddEntry(hMeas1D[icent][ipt], "Raw", "p");
+
+      cleg->AddEntry("", Form("%2.1f < p_{T} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+      cleg->AddEntry("", cent_str[icent].c_str(), "");
+
+      hleg->Draw();
+      cleg->Draw();
+      leg->Draw();
+
+      // ratio panel (pad2) is unchanged from the first version: unfold/truth
+
+      if (ishalf)
+        c2->Print(Form("plots/xj_unfoldhalfclosure_pt%i_cent%i_withraw.pdf", ipt, icent));
+      else
+        c2->Print(Form("plots/xj_unfoldfullclosure_pt%i_cent%i_withraw.pdf", ipt, icent));
+
+      hleg->Clear();
+      cleg->Clear();
     }
   }
 }
