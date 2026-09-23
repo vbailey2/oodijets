@@ -39,7 +39,7 @@ void drawunfoldclosure(bool ishalf = 1)
   leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
   leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 
-  TLegend *cleg = new TLegend(.15, .6, .4, .75);
+  TLegend *cleg = new TLegend(.15, .6, .4, .7);
   cleg->SetFillStyle(0);
 
   TLegend *hleg = new TLegend(.6, .7, .9, .92);
