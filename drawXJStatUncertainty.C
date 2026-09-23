@@ -14,6 +14,7 @@ void drawXJStatUncertainty()
 	int colors[] = {1, 2, 4, kGreen + 2, kViolet};
 
 	// ATLAS O+O/pp reference points (extracted from plots/oodijetatlas.pdf), overlaid on the inclusive plots
+	// at their real central values
 	TGraph *gAtlas = new TGraph("atlas_oodijet_ratio.txt");
 	gAtlas->SetName("gAtlas");
 	gAtlas->SetMarkerStyle(24);
@@ -62,7 +63,7 @@ void drawXJStatUncertainty()
 
 				if (ypp == 0 || yhist == 0)
 				{
-					gratio->SetPoint(ip, x, 0);
+					gratio->SetPoint(ip, x, 1);
 					gratio->SetPointEYlow(ip, 0);
 					gratio->SetPointEYhigh(ip, 0);
 					continue;
@@ -73,8 +74,8 @@ void drawXJStatUncertainty()
 				double errLow = ratio * std::sqrt(relErrHist * relErrHist + (eyppLow / ypp) * (eyppLow / ypp));
 				double errHigh = ratio * std::sqrt(relErrHist * relErrHist + (eyppHigh / ypp) * (eyppHigh / ypp));
 
-				// zero out the central value so only the statistical uncertainty on the ratio remains visible
-				gratio->SetPoint(ip, x, 0);
+				// pin the central value to 1 so only the statistical uncertainty on the ratio remains visible
+				gratio->SetPoint(ip, x, 1);
 				gratio->SetPointEYlow(ip, errLow);
 				gratio->SetPointEYhigh(ip, errHigh);
 			}
@@ -84,7 +85,7 @@ void drawXJStatUncertainty()
 			gratio->SetMarkerColor(colors[i]);
 			gratio->SetLineColor(colors[i]);
 			gratio->GetXaxis()->SetLimits(0.2, 1);
-			gratio->GetYaxis()->SetRangeUser(-0.5, 2.5);
+			gratio->GetYaxis()->SetRangeUser(0, 2.5);
 			gratio->GetXaxis()->SetTitle("x_{J}");
 			gratio->GetYaxis()->SetTitle("stat. uncertainty on AA/pp");
 
