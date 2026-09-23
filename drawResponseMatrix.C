@@ -10,6 +10,29 @@ void drawResponseMatrix()
 
 	TFile *f = new TFile("hists/histMC_reweight.root", "READ");
 
+	// the data/MC weights applied on top of the MC to produce this reweighted response matrix
+	TFile *frw = new TFile("hists/centrality_mbd_reweight.root", "READ");
+	TH1D *h_totalcalo_et_ratio = (TH1D *)frw->Get("h_totalcalo_et_ratio");
+	TH1D *h_vz_ratio = (TH1D *)frw->Get("h_vz_ratio");
+
+	h_totalcalo_et_ratio->SetTitle(";totalcalo_et;Data/MC weight");
+	h_totalcalo_et_ratio->SetMarkerStyle(20);
+	h_totalcalo_et_ratio->SetMarkerColor(kBlack);
+	h_totalcalo_et_ratio->SetLineColor(kBlack);
+
+	h_vz_ratio->SetTitle(";v_{z} [cm];Data/MC weight");
+	h_vz_ratio->SetMarkerStyle(20);
+	h_vz_ratio->SetMarkerColor(kBlack);
+	h_vz_ratio->SetLineColor(kBlack);
+
+	TCanvas *cTotalCaloEt = new TCanvas("c_totalcalo_et_weight", "c_totalcalo_et_weight", 700, 700);
+	h_totalcalo_et_ratio->Draw("PE");
+	cTotalCaloEt->Print("plots/weight_totalcalo_et.pdf");
+
+	TCanvas *cVz = new TCanvas("c_vz_weight", "c_vz_weight", 700, 700);
+	h_vz_ratio->Draw("PE");
+	cVz->Print("plots/weight_vz.pdf");
+
 	TH3F *h_pt1pt2 = (TH3F *)f->Get("h_pt1pt2");
 	int cent_N = h_pt1pt2->GetNbinsZ();
 	int pt_N = h_pt1pt2->GetNbinsX();
