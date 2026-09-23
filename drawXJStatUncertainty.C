@@ -13,8 +13,8 @@ void drawXJStatUncertainty()
 	std::string cent_str[] = {"0-20%", "20-40%", "40-60%", "60-80%"};
 	int colors[] = {1, 2, 4, kGreen + 2, kViolet};
 
-	// ATLAS O+O/pp reference points (extracted from plots/oodijetatlas.pdf), overlaid on the inclusive plots
-	// at their real central values
+	// ATLAS O+O/pp reference points (extracted from plots/oodijetatlas.pdf), overlaid on the 0-20% most-central
+	// bin (our finest centrality bin, closest match to ATLAS's 0-10%), at their real central values
 	TGraph *gAtlas = new TGraph("atlas_oodijet_ratio.txt");
 	gAtlas->SetName("gAtlas");
 	gAtlas->SetMarkerStyle(24);
@@ -38,6 +38,9 @@ void drawXJStatUncertainty()
 	for (int ipt = 0; ipt < nfinal; ipt++)
 	{
 		TGraphAsymmErrors *gpp = (TGraphAsymmErrors *)fpp->Get(Form("g_final_xj_statistics_%d_1", ipt));
+
+		double pt1low = h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1);
+		double pt1high = h_xj[0]->GetYaxis()->GetBinUpEdge(ipt + 1);
 
 		for (int i = 0; i <= ncent; i++) // i = 0..ncent-1: centralities; i = ncent: centrality-inclusive
 		{
@@ -87,25 +90,47 @@ void drawXJStatUncertainty()
 			gratio->GetXaxis()->SetLimits(0.2, 1);
 			gratio->GetYaxis()->SetRangeUser(0, 2.5);
 			gratio->GetXaxis()->SetTitle("x_{J}");
-			gratio->GetYaxis()->SetTitle("stat. uncertainty on AA/pp");
+			gratio->GetYaxis()->SetTitle("O+O/p+p");
 
 			TCanvas *c = new TCanvas(Form("c_xjstat_pt%d_%d", ipt, i), Form("c_xjstat_pt%d_%d", ipt, i), 700, 700);
-			TLegend *leg = new TLegend(.65, .72, .88, .88);
-			leg->SetFillStyle(0);
+
+			TLegend *sphenixLeg = new TLegend(.15, .75, .4, .92);
+			sphenixLeg->SetFillStyle(0);
+			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+			sphenixLeg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
+			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 
 			gratio->Draw("AP");
-			leg->AddEntry(gratio, label.c_str(), "lep");
 
 			std::string outname = isInclusive ? Form("plots/xj_statuncertainty_pt%i_inclusive.pdf", ipt)
 											   : Form("plots/xj_statuncertainty_pt%i_cent%i.pdf", ipt, i);
 
-			if (isInclusive)
+			if (i == 0)
 			{
 				gAtlas->Draw("P SAME");
-				leg->AddEntry(gAtlas, "ATLAS O+O/pp (0-10%)", "lep");
+
+				TLegend *dataLeg = new TLegend(.15, .55, .88, .74);
+				dataLeg->SetFillStyle(0);
+				dataLeg->SetNColumns(2);
+				dataLeg->AddEntry(gratio, "sPHENIX statistical reach", "lep");
+				dataLeg->AddEntry(gAtlas, "ATLAS result from arXiv:2606.20463", "lep");
+				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 200 GeV", "");
+				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
+				dataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4", "");
+				dataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8", "");
+				dataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
+				dataLeg->AddEntry("", "79 < p_{T1} < 89 GeV", "");
+				dataLeg->Draw();
+			}
+			else
+			{
+				TLegend *dataLeg = new TLegend(.65, .8, .88, .88);
+				dataLeg->SetFillStyle(0);
+				dataLeg->AddEntry(gratio, label.c_str(), "lep");
+				dataLeg->Draw();
 			}
 
-			leg->Draw();
+			sphenixLeg->Draw();
 			c->Print(outname.c_str());
 		}
 	}
