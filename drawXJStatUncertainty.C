@@ -94,8 +94,9 @@ void drawXJStatUncertainty()
 
 			TCanvas *c = new TCanvas(Form("c_xjstat_pt%d_%d", ipt, i), Form("c_xjstat_pt%d_%d", ipt, i), 700, 700);
 
-			TLegend *sphenixLeg = new TLegend(.15, .75, .4, .92);
+			TLegend *sphenixLeg = new TLegend(.15, .75, .45, .92);
 			sphenixLeg->SetFillStyle(0);
+			sphenixLeg->SetTextSize(0.032);
 			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
 			sphenixLeg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
 			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
@@ -109,8 +110,9 @@ void drawXJStatUncertainty()
 			{
 				gAtlas->Draw("P SAME");
 
-				TLegend *dataLeg = new TLegend(.15, .55, .88, .74);
+				TLegend *dataLeg = new TLegend(.15, .61, .92, .74);
 				dataLeg->SetFillStyle(0);
+				dataLeg->SetTextSize(0.022);
 				dataLeg->SetNColumns(2);
 				dataLeg->AddEntry(gratio, "sPHENIX statistical reach", "lep");
 				dataLeg->AddEntry(gAtlas, "ATLAS result from arXiv:2606.20463", "lep");
@@ -126,6 +128,7 @@ void drawXJStatUncertainty()
 			{
 				TLegend *dataLeg = new TLegend(.65, .8, .88, .88);
 				dataLeg->SetFillStyle(0);
+				dataLeg->SetTextSize(0.032);
 				dataLeg->AddEntry(gratio, label.c_str(), "lep");
 				dataLeg->Draw();
 			}
