@@ -5,90 +5,94 @@ void drawXJStatUncertainty()
 {
 	SetsPhenixStyle();
 	TH1::SetDefaultSumw2();
-	TH3::SetDefaultSumw2();
 
-	TFile *f = new TFile("hists/hist-full.root", "READ");
-	TH3F *h_xj = (TH3F *)f->Get("h_xj");
+	TFile *fproj = new TFile("hists/projections.root", "READ");
+	TFile *fpp = new TFile("hists/final_plots_pp_r04.root", "READ");
 
-	int npt = h_xj->GetNbinsY();
-	int ncent = h_xj->GetNbinsZ();
+	const int ncent = 4;
 	std::string cent_str[] = {"0-20%", "20-40%", "40-60%", "60-80%"};
-	int colors[] = {1, 2, 4, kGreen + 2};
+	int colors[] = {1, 2, 4, kGreen + 2, kViolet};
 
-	for (int ipt = 0; ipt < npt; ipt++)
+	// per-centrality final xj histograms, plus their sum for the centrality-inclusive O+O comparison
+	TH2F *h_xj[ncent];
+	TH2F *h_xj_inclusive = nullptr;
+	for (int ic = 0; ic < ncent; ic++)
 	{
-		// peripheral (most peripheral centrality bin) reference for this pt bin
-		h_xj->GetYaxis()->SetRange(ipt + 1, ipt + 1);
-		h_xj->GetZaxis()->SetRange(ncent, ncent);
-		TH1D *h_periph = (TH1D *)h_xj->Project3D("x");
-		h_periph->SetName(Form("h_xj_periph_pt%i", ipt));
-		if (h_periph->Integral() <= 0)
-		{
-			std::cout << "pt bin " << ipt << ": peripheral slice is empty, skipping" << std::endl;
-			continue;
-		}
-		h_periph->Scale(1. / h_periph->Integral(), "width");
+		h_xj[ic] = (TH2F *)fproj->Get(Form("h_xj_%i", ic));
+		if (ic == 0)
+			h_xj_inclusive = (TH2F *)h_xj[ic]->Clone("h_xj_inclusive");
+		else
+			h_xj_inclusive->Add(h_xj[ic]);
+	}
 
-		// first pass: build all centrality ratios for this pt bin and track the largest error
-		TH1D *h_ratio[ncent];
-		double maxerr = 0;
-		for (int icent = 0; icent < ncent; icent++)
-		{
-			h_xj->GetYaxis()->SetRange(ipt + 1, ipt + 1);
-			h_xj->GetZaxis()->SetRange(icent + 1, icent + 1);
-			TH1D *h_cent = (TH1D *)h_xj->Project3D("x");
-			h_cent->SetName(Form("h_xj_cent%i_pt%i", icent, ipt));
-			if (h_cent->Integral() <= 0)
-			{
-				std::cout << "pt bin " << ipt << ", cent bin " << icent << ": slice is empty, skipping" << std::endl;
-				h_ratio[icent] = nullptr;
-				continue;
-			}
-			h_cent->Scale(1. / h_cent->Integral(), "width");
+	int nfinal = h_xj[0]->GetNbinsY();
 
-			h_ratio[icent] = (TH1D *)h_cent->Clone(Form("h_xj_ratio_cent%i_pt%i", icent, ipt));
-			h_ratio[icent]->Divide(h_periph);
-
-			// zero out the central value so only the statistical uncertainty on the ratio remains visible
-			for (int ib = 1; ib <= h_ratio[icent]->GetNbinsX(); ib++)
-			{
-				double err = h_ratio[icent]->GetBinError(ib);
-				h_ratio[icent]->SetBinContent(ib, 0);
-				if (h_ratio[icent]->GetXaxis()->GetBinCenter(ib) >= 0.2 && err > maxerr)
-					maxerr = err;
-			}
-		}
-
-		if (maxerr <= 0)
-			maxerr = 0.1;
+	for (int ipt = 0; ipt < nfinal; ipt++)
+	{
+		TGraphAsymmErrors *gpp = (TGraphAsymmErrors *)fpp->Get(Form("g_final_xj_statistics_%d_1", ipt));
 
 		TCanvas *c = new TCanvas(Form("c_xjstat_pt%i", ipt), Form("c_xjstat_pt%i", ipt), 700, 700);
-		TLegend *leg = new TLegend(.65, .7, .88, .88);
+		TLegend *leg = new TLegend(.65, .65, .88, .88);
 		leg->SetFillStyle(0);
 
 		bool drawnany = false;
-		for (int icent = 0; icent < ncent; icent++)
+		for (int i = 0; i <= ncent; i++) // i = 0..ncent-1: centralities; i = ncent: centrality-inclusive
 		{
-			if (!h_ratio[icent])
-				continue;
+			TH2F *hsrc = (i < ncent) ? h_xj[i] : h_xj_inclusive;
+			std::string label = (i < ncent) ? cent_str[i] : "Inclusive";
 
-			h_ratio[icent]->SetTitle("");
-			h_ratio[icent]->SetMarkerStyle(20);
-			h_ratio[icent]->SetMarkerColor(colors[icent]);
-			h_ratio[icent]->SetLineColor(colors[icent]);
-			h_ratio[icent]->GetXaxis()->SetRangeUser(0.2, 1);
-			h_ratio[icent]->GetYaxis()->SetRangeUser(-1.3 * maxerr, 1.3 * maxerr);
-			h_ratio[icent]->GetXaxis()->SetTitle("x_{J}");
-			h_ratio[icent]->GetYaxis()->SetTitle(Form("stat. uncertainty on ratio to %s", cent_str[ncent - 1].c_str()));
+			hsrc->GetYaxis()->SetRange(ipt + 1, ipt + 1);
+			TH1D *h1d = (TH1D *)hsrc->ProjectionX(Form("h_xj_proj_%d_pt%d", i, ipt));
+			h1d->Scale(1. / h1d->Integral(), "width");
+
+			TGraphAsymmErrors *gratio = (TGraphAsymmErrors *)gpp->Clone(Form("g_ratio_%d_pt%d", i, ipt));
+			int npts = gratio->GetN();
+			for (int ip = 0; ip < npts; ip++)
+			{
+				double x, ypp;
+				gratio->GetPoint(ip, x, ypp);
+				int bin = h1d->GetXaxis()->FindBin(x);
+				double yhist = h1d->GetBinContent(bin);
+				double ehist = h1d->GetBinError(bin);
+				double eyppLow = gratio->GetErrorYlow(ip);
+				double eyppHigh = gratio->GetErrorYhigh(ip);
+
+				if (ypp == 0 || yhist == 0)
+				{
+					gratio->SetPoint(ip, x, 0);
+					gratio->SetPointEYlow(ip, 0);
+					gratio->SetPointEYhigh(ip, 0);
+					continue;
+				}
+
+				double ratio = yhist / ypp;
+				double relErrHist = ehist / yhist;
+				double errLow = ratio * std::sqrt(relErrHist * relErrHist + (eyppLow / ypp) * (eyppLow / ypp));
+				double errHigh = ratio * std::sqrt(relErrHist * relErrHist + (eyppHigh / ypp) * (eyppHigh / ypp));
+
+				// zero out the central value so only the statistical uncertainty on the ratio remains visible
+				gratio->SetPoint(ip, x, 0);
+				gratio->SetPointEYlow(ip, errLow);
+				gratio->SetPointEYhigh(ip, errHigh);
+			}
+
+			gratio->SetTitle("");
+			gratio->SetMarkerStyle(20);
+			gratio->SetMarkerColor(colors[i]);
+			gratio->SetLineColor(colors[i]);
+			gratio->GetXaxis()->SetLimits(0.2, 1);
+			gratio->GetYaxis()->SetRangeUser(-0.5, 2.5);
+			gratio->GetXaxis()->SetTitle("x_{J}");
+			gratio->GetYaxis()->SetTitle("stat. uncertainty on AA/pp");
 
 			if (!drawnany)
 			{
-				h_ratio[icent]->Draw("PE");
+				gratio->Draw("AP");
 				drawnany = true;
 			}
 			else
-				h_ratio[icent]->Draw("PE SAME");
-			leg->AddEntry(h_ratio[icent], cent_str[icent].c_str(), "lep");
+				gratio->Draw("P SAME");
+			leg->AddEntry(gratio, label.c_str(), "lep");
 		}
 
 		leg->Draw();
