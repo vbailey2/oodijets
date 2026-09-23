@@ -32,17 +32,17 @@ void drawunfoldclosure(bool ishalf = 1)
   pad2->SetLeftMargin(0.12);
   pad2->Draw();
 
-  TLegend *leg = new TLegend(.15, .75, .4, .92);
+  TLegend *leg = new TLegend(.15, .7, .4, .92);
   leg->SetFillStyle(0);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
-  leg->AddEntry("", "Pythia + HIJING", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
+  leg->AddEntry("", "Pythia8 + HIJING", "");
   leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
   leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 
   TLegend *cleg = new TLegend(.15, .6, .4, .75);
   cleg->SetFillStyle(0);
 
-  TLegend *hleg = new TLegend(.6, .75, .9, .92);
+  TLegend *hleg = new TLegend(.6, .7, .9, .92);
   hleg->SetFillStyle(0);
 
   int colors[] = {1, 2, 4, kGreen + 2, kViolet, kCyan, kOrange + 2, kMagenta + 2, kAzure - 2};
@@ -84,8 +84,8 @@ void drawunfoldclosure(bool ishalf = 1)
       hTrue1D[icent][ipt] = (TH1D *)hTrue2D[icent]->ProjectionX();
       hTrue1D[icent][ipt]->SetName(Form("h_xjtrue_cent%i_pt%i", icent, ipt));
       hTrue1D[icent][ipt]->Scale(1./hTrue1D[icent][ipt]->Integral(),"width");
-      hTrue1D[icent][ipt]->SetMarkerColor(colors[icent]);
-      hTrue1D[icent][ipt]->SetLineColor(colors[icent]);
+      hTrue1D[icent][ipt]->SetMarkerColor(colors[0]);
+      hTrue1D[icent][ipt]->SetLineColor(colors[0]);
       hTrue1D[icent][ipt]->GetYaxis()->SetRangeUser(0,5);
       hTrue1D[icent][ipt]->GetXaxis()->SetRangeUser(0.3, 1);
       hTrue1D[icent][ipt]->GetXaxis()->SetTitle("x_{J}");
@@ -98,9 +98,9 @@ void drawunfoldclosure(bool ishalf = 1)
       h_xj1D[icent][ipt]->SetName(Form("h_xj_cent%i_pt%i", icent, ipt));
       h_xj1D[icent][ipt]->Scale(1./h_xj1D[icent][ipt]->Integral(),"width");
 
-      h_xj1D[icent][ipt]->SetMarkerColor(colors[icent]);
+      h_xj1D[icent][ipt]->SetMarkerColor(colors[1]);
       h_xj1D[icent][ipt]->SetMarkerStyle(25);
-      h_xj1D[icent][ipt]->SetLineColor(colors[icent]);
+      h_xj1D[icent][ipt]->SetLineColor(colors[1]);
       h_xj1D[icent][ipt]->GetYaxis()->SetRangeUser(0, 5);
       h_xj1D[icent][ipt]->GetXaxis()->SetRangeUser(0.3, 1);
       h_xj1D[icent][ipt]->GetXaxis()->SetTitle("x_{J}");
@@ -167,9 +167,9 @@ void drawunfoldclosure(bool ishalf = 1)
       hMeas1D[icent][ipt] = (TH1D *)hMeas2D[icent]->ProjectionX();
       hMeas1D[icent][ipt]->Scale(1./hMeas1D[icent][ipt]->Integral(),"width");
       hMeas1D[icent][ipt]->SetName(Form("h_xjmeas_cent%i_pt%i", icent, ipt));
-      hMeas1D[icent][ipt]->SetMarkerColor(colors[icent]);
+      hMeas1D[icent][ipt]->SetMarkerColor(colors[2]);
       hMeas1D[icent][ipt]->SetMarkerStyle(24);
-      hMeas1D[icent][ipt]->SetLineColor(colors[icent]);
+      hMeas1D[icent][ipt]->SetLineColor(colors[2]);
       hMeas1D[icent][ipt]->GetYaxis()->SetRangeUser(0, 5);
       hMeas1D[icent][ipt]->GetXaxis()->SetRangeUser(0.3, 1);
       hMeas1D[icent][ipt]->GetXaxis()->SetTitle("x_{J}");
