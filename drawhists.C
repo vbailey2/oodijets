@@ -275,18 +275,12 @@ void drawhists(int isunfold = 0)
 		for (int ipt = 0; ipt < npt; ipt++)
 		{
 			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_dphi->GetYaxis()->GetBinLowEdge(ipt + 1), h_dphi->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
-			for (int icent = 0; icent <= ncent; icent++) // icent = 0..ncent-1: centralities; icent = ncent: inclusive (0-100%)
+			for (int icent = 0; icent < ncent; icent++)
 			{
-				bool isInclusive = (icent == ncent);
-				std::string label = isInclusive ? "0-100%" : cent_str[icent];
-
 				h_dphi->GetYaxis()->SetRange(ipt + 1, ipt + 1);
-				if (isInclusive)
-					h_dphi->GetZaxis()->SetRange(1, ncent);
-				else
-					h_dphi->GetZaxis()->SetRange(icent + 1, icent + 1);
+				h_dphi->GetZaxis()->SetRange(icent + 1, icent + 1);
 				h_dphi1D[icent][ipt] = (TH1F *)h_dphi->Project3D("x");
-				h_dphi1D[icent][ipt]->SetName(isInclusive ? Form("h_dphi_inclusive_pt%i", ipt) : Form("h_dphi_cent%i_pt%i", icent, ipt));
+				h_dphi1D[icent][ipt]->SetName(Form("h_dphi_cent%i_pt%i", icent, ipt));
 				h_dphi1D[icent][ipt]->Scale(1. / h_dphi1D[icent][ipt]->Integral());
 				h_dphi1D[icent][ipt]->SetMarkerColor(colors[icent]);
 				h_dphi1D[icent][ipt]->SetLineColor(colors[icent]);
@@ -296,12 +290,34 @@ void drawhists(int isunfold = 0)
 					h_dphi1D[icent][ipt]->Draw();
 				else
 					h_dphi1D[icent][ipt]->Draw("SAME");
-				hleg->AddEntry(h_dphi1D[icent][ipt], label.c_str(), "p");
+				hleg->AddEntry(h_dphi1D[icent][ipt], cent_str[icent].c_str(), "p");
 			}
 			leg->Draw();
 			cleg->Draw();
 			hleg->Draw();
 			c->Print(Form("plots/dphi_pt%i.pdf", ipt));
+			c->Clear();
+			cleg->Clear();
+			hleg->Clear();
+
+			// separate figure: centrality-inclusive (0-100%) dphi distribution on its own
+			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_dphi->GetYaxis()->GetBinLowEdge(ipt + 1), h_dphi->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+			h_dphi->GetYaxis()->SetRange(ipt + 1, ipt + 1);
+			h_dphi->GetZaxis()->SetRange(1, ncent);
+			h_dphi1D[ncent][ipt] = (TH1F *)h_dphi->Project3D("x");
+			h_dphi1D[ncent][ipt]->SetName(Form("h_dphi_inclusive_pt%i", ipt));
+			h_dphi1D[ncent][ipt]->Scale(1. / h_dphi1D[ncent][ipt]->Integral());
+			h_dphi1D[ncent][ipt]->SetMarkerColor(colors[0]);
+			h_dphi1D[ncent][ipt]->SetLineColor(colors[0]);
+			h_dphi1D[ncent][ipt]->GetYaxis()->SetRangeUser(0, 1);
+			h_dphi1D[ncent][ipt]->GetXaxis()->SetTitle("#Delta#phi");
+			h_dphi1D[ncent][ipt]->Draw();
+			hleg->AddEntry(h_dphi1D[ncent][ipt], "0-100%", "p");
+
+			leg->Draw();
+			cleg->Draw();
+			hleg->Draw();
+			c->Print(Form("plots/dphi_pt%i_inclusive.pdf", ipt));
 			c->Clear();
 			cleg->Clear();
 			hleg->Clear();
