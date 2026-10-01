@@ -109,7 +109,7 @@ void drawXJStatUncertainty()
 
 			if (i == 0)
 			{
-				gAtlas->Draw("P SAME");
+				gAtlas->Draw("L SAME");
 
 				TLegend *dataLeg = new TLegend(.15, .61, .92, .74);
 				dataLeg->SetFillStyle(0);

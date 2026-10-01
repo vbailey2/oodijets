@@ -111,7 +111,7 @@ void drawhists(int isunfold = 0)
 
 	TH1F *h_xj1D[ncent][npt];
 	TH1F *h_xjnoproj1D[ncent][npt];
-	TH1F *h_dphi1D[ncent][npt];
+	TH1F *h_dphi1D[ncent + 1][npt]; // +1 for the centrality-inclusive (0-100%) curve
 
 	for (int ipt = 0; ipt < n_final; ipt++)
 	{
@@ -275,12 +275,18 @@ void drawhists(int isunfold = 0)
 		for (int ipt = 0; ipt < npt; ipt++)
 		{
 			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_dphi->GetYaxis()->GetBinLowEdge(ipt + 1), h_dphi->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
-			for (int icent = 0; icent < ncent; icent++)
+			for (int icent = 0; icent <= ncent; icent++) // icent = 0..ncent-1: centralities; icent = ncent: inclusive (0-100%)
 			{
+				bool isInclusive = (icent == ncent);
+				std::string label = isInclusive ? "0-100%" : cent_str[icent];
+
 				h_dphi->GetYaxis()->SetRange(ipt + 1, ipt + 1);
-				h_dphi->GetZaxis()->SetRange(icent + 1, icent + 1);
+				if (isInclusive)
+					h_dphi->GetZaxis()->SetRange(1, ncent);
+				else
+					h_dphi->GetZaxis()->SetRange(icent + 1, icent + 1);
 				h_dphi1D[icent][ipt] = (TH1F *)h_dphi->Project3D("x");
-				h_dphi1D[icent][ipt]->SetName(Form("h_dphi_cent%i_pt%i", icent, ipt));
+				h_dphi1D[icent][ipt]->SetName(isInclusive ? Form("h_dphi_inclusive_pt%i", ipt) : Form("h_dphi_cent%i_pt%i", icent, ipt));
 				h_dphi1D[icent][ipt]->Scale(1. / h_dphi1D[icent][ipt]->Integral());
 				h_dphi1D[icent][ipt]->SetMarkerColor(colors[icent]);
 				h_dphi1D[icent][ipt]->SetLineColor(colors[icent]);
@@ -290,7 +296,7 @@ void drawhists(int isunfold = 0)
 					h_dphi1D[icent][ipt]->Draw();
 				else
 					h_dphi1D[icent][ipt]->Draw("SAME");
-				hleg->AddEntry(h_dphi1D[icent][ipt], cent_str[icent].c_str(), "p");
+				hleg->AddEntry(h_dphi1D[icent][ipt], label.c_str(), "p");
 			}
 			leg->Draw();
 			cleg->Draw();
