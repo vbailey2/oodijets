@@ -86,21 +86,20 @@ void drawXJStatUncertainty()
 
 			gratio->SetTitle("");
 			gratio->SetMarkerStyle(20);
-			gratio->SetMarkerColor(colors[i]);
-			gratio->SetLineColor(colors[i]);
+			gratio->SetMarkerColor(kRed);
+			gratio->SetLineColor(kRed);
 			gratio->GetXaxis()->SetLimits(0.2, 1);
-			gratio->GetYaxis()->SetRangeUser(0, 2.5);
+			gratio->GetYaxis()->SetRangeUser(0.5, 2.);
 			gratio->GetXaxis()->SetTitle("x_{J}");
 			gratio->GetYaxis()->SetTitle("O+O/p+p");
 
 			TCanvas *c = new TCanvas(Form("c_xjstat_pt%d_%d", ipt, i), Form("c_xjstat_pt%d_%d", ipt, i), 700, 700);
 
-			TLegend *sphenixLeg = new TLegend(.15, .75, .45, .92);
+			TLegend *sphenixLeg = new TLegend(.15, .8, .45, .92);
 			sphenixLeg->SetFillStyle(0);
 			sphenixLeg->SetTextSize(0.032);
 			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
-			sphenixLeg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
-			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
+			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4", "");
 
 			gratio->Draw("AP");
 
@@ -111,17 +110,17 @@ void drawXJStatUncertainty()
 			{
 				gAtlas->Draw("L SAME");
 
-				TLegend *dataLeg = new TLegend(.15, .61, .92, .74);
+				TLegend *dataLeg = new TLegend(.45, .55, .92, .92);
 				dataLeg->SetFillStyle(0);
 				dataLeg->SetTextSize(0.022);
-				dataLeg->SetNColumns(2);
-				dataLeg->AddEntry(gratio, "sPHENIX statistical reach", "lep");
-				dataLeg->AddEntry(gAtlas, "ATLAS result from arXiv:2606.20463", "lep");
+				//dataLeg->SetNColumns(2);
+				dataLeg->AddEntry(gratio, "sPHENIX statistical reach", "ep");
 				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 200 GeV", "");
-				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
-				dataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4", "");
-				dataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8", "");
+				dataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4, |#eta| < 0.7", "");
 				dataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
+				dataLeg->AddEntry(gAtlas, "ATLAS result from arXiv:2606.20463", "l");
+				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
+				dataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8, |y| < 2.1", "");
 				dataLeg->AddEntry("", "79 < p_{T1} < 89 GeV", "");
 				dataLeg->Draw();
 			}
