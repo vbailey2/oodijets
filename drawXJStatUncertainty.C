@@ -55,7 +55,7 @@ void drawXJStatUncertainty()
 
 			TGraphAsymmErrors *gratio = (TGraphAsymmErrors *)gpp->Clone(Form("g_ratio_%d_pt%d", i, ipt));
 			int npts = gratio->GetN();
-			for (int ip = 0; ip < npts; ip++)
+			for (int ip = 1; ip < npts; ip++)
 			{
 				double x, ypp;
 				gratio->GetPoint(ip, x, ypp);
@@ -88,7 +88,7 @@ void drawXJStatUncertainty()
 			gratio->SetMarkerStyle(20);
 			gratio->SetMarkerColor(kRed);
 			gratio->SetLineColor(kRed);
-			gratio->GetXaxis()->SetLimits(0.2, 1);
+			gratio->GetXaxis()->SetLimits(0.3, 1);
 			gratio->GetYaxis()->SetRangeUser(0.5, 2.);
 			gratio->GetXaxis()->SetTitle("x_{J}");
 			gratio->GetYaxis()->SetTitle("O+O/p+p");
@@ -97,7 +97,7 @@ void drawXJStatUncertainty()
 
 			TLegend *sphenixLeg = new TLegend(.15, .8, .45, .92);
 			sphenixLeg->SetFillStyle(0);
-			sphenixLeg->SetTextSize(0.032);
+			//sphenixLeg->SetTextSize(0.032);
 			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
 			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4", "");
 
@@ -110,15 +110,15 @@ void drawXJStatUncertainty()
 			{
 				gAtlas->Draw("L SAME");
 
-				TLegend *dataLeg = new TLegend(.45, .55, .92, .92);
+				TLegend *dataLeg = new TLegend(.45, .55, .92, .88);
 				dataLeg->SetFillStyle(0);
-				dataLeg->SetTextSize(0.022);
+				dataLeg->SetTextSize(0.028);
 				//dataLeg->SetNColumns(2);
 				dataLeg->AddEntry(gratio, "sPHENIX statistical reach", "ep");
 				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 200 GeV", "");
 				dataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4, |#eta| < 0.7", "");
 				dataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
-				dataLeg->AddEntry(gAtlas, "ATLAS result from arXiv:2606.20463", "l");
+				dataLeg->AddEntry(gAtlas, "ATLAS arXiv:2606.20463", "l");
 				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
 				dataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8, |y| < 2.1", "");
 				dataLeg->AddEntry("", "79 < p_{T1} < 89 GeV", "");

@@ -26,7 +26,7 @@ void projectUnfoldClosure(bool ishalf = 0)
     // std::cout<<"bin "<<i <<" is "<<final_pt_binning[i]<<std::endl;
   }
 
-  const int nxj_final = 9; // only keep the 9 highest xj bins
+  const int nxj_final = 8; // only keep the 9 highest xj bins
   Double_t final_xj_binning[nxj_final + 1];
   for (int i = 0; i <= nxj_final; i++)
   {
