@@ -424,7 +424,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 				if (subpttrue >= truth_subpt_min && leadpttrue >= truth_leadpt_min && fabs(leadetatrue) < 0.7 && fabs(subetatrue) < 0.7)
 				{
 					// check if truth is back to back
-					float dPhi = leadphi - subphi;
+					float dPhi = leadphitrue - subphitrue;
 					while (dPhi > TMath::Pi())
 						dPhi -= 2 * TMath::Pi();
 					while (dPhi < -TMath::Pi())
