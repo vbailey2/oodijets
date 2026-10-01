@@ -13,7 +13,7 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
   iy = g % nBinsY + 1;
 }
 
-void unfoldClosure(int nIterations = 2)
+void unfoldClosure(int nIterations = 1)
 {
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();

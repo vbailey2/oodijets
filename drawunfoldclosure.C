@@ -42,7 +42,7 @@ void drawunfoldclosure(bool ishalf = 1)
   TLegend *cleg = new TLegend(.15, .6, .4, .7);
   cleg->SetFillStyle(0);
 
-  TLegend *hleg = new TLegend(.6, .7, .9, .92);
+  TLegend *hleg = new TLegend(.65, .7, .9, .92);
   hleg->SetFillStyle(0);
 
   int colors[] = {1, 2, 4, kGreen + 2, kViolet, kCyan, kOrange + 2, kMagenta + 2, kAzure - 2};
@@ -176,7 +176,7 @@ void drawunfoldclosure(bool ishalf = 1)
       hMeas1D[icent][ipt]->Draw("SAME");
       hleg->AddEntry(hMeas1D[icent][ipt], "Raw", "p");
 
-      cleg->AddEntry("", Form("%2.1f < p_{T} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+      cleg->AddEntry("", Form("%2.1f < p_{T,1} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
       cleg->AddEntry("", cent_str[icent].c_str(), "");
 
       hleg->Draw();
