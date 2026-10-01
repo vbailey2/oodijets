@@ -46,7 +46,7 @@ void drawhists(int isunfold = 0)
 	leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
 	leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 
-	TLegend *cleg = new TLegend(.15, .6, .4, .75);
+	TLegend *cleg = new TLegend(.15, .55, .4, .75);
 	cleg->SetFillStyle(0);
 
 	TLegend *hleg = new TLegend(.7, .75, .9, .92);
@@ -278,6 +278,7 @@ void drawhists(int isunfold = 0)
 		for (int ipt = 0; ipt < npt; ipt++)
 		{
 			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_dphi->GetYaxis()->GetBinLowEdge(ipt + 1), h_dphi->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+			cleg->AddEntry("", "p_{T,2}^{calib} > 9.4 GeV", "");
 			for (int icent = 0; icent < ncent; icent++)
 			{
 				h_dphi->GetYaxis()->SetRange(ipt + 1, ipt + 1);
@@ -289,6 +290,7 @@ void drawhists(int isunfold = 0)
 				h_dphi1D[icent][ipt]->SetLineColor(colors[icent]);
 				h_dphi1D[icent][ipt]->GetYaxis()->SetRangeUser(0, 1);
 				h_dphi1D[icent][ipt]->GetXaxis()->SetTitle("#Delta#phi");
+				h_dphi1D[icent][ipt]->GetYaxis()->SetTitle("Counts [arb. units]");
 				if (icent == 0)
 					h_dphi1D[icent][ipt]->Draw();
 				else
@@ -305,6 +307,8 @@ void drawhists(int isunfold = 0)
 
 			// separate figure: centrality-inclusive (0-100%) dphi distribution on its own
 			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_dphi->GetYaxis()->GetBinLowEdge(ipt + 1), h_dphi->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+			cleg->AddEntry("", "p_{T,2}^{calib} > 9.4 GeV", "");
+			cleg->AddEntry("", "0-100%","");
 			h_dphi->GetYaxis()->SetRange(ipt + 1, ipt + 1);
 			h_dphi->GetZaxis()->SetRange(1, ncent);
 			h_dphi1D[ncent][ipt] = (TH1F *)h_dphi->Project3D("x");
@@ -312,10 +316,11 @@ void drawhists(int isunfold = 0)
 			h_dphi1D[ncent][ipt]->Scale(1. / h_dphi1D[ncent][ipt]->Integral());
 			h_dphi1D[ncent][ipt]->SetMarkerColor(colors[0]);
 			h_dphi1D[ncent][ipt]->SetLineColor(colors[0]);
-			h_dphi1D[ncent][ipt]->GetYaxis()->SetRangeUser(0, 1);
+			h_dphi1D[ncent][ipt]->GetYaxis()->SetRangeUser(0, 0.8);
 			h_dphi1D[ncent][ipt]->GetXaxis()->SetTitle("#Delta#phi");
+			h_dphi1D[ncent][ipt]->GetYaxis()->SetTitle("Counts [arb. units]");
 			h_dphi1D[ncent][ipt]->Draw();
-			hleg->AddEntry(h_dphi1D[ncent][ipt], "0-100%", "p");
+
 
 			leg->Draw();
 			cleg->Draw();
