@@ -37,6 +37,10 @@ void drawResponseMatrix()
 	int cent_N = h_pt1pt2->GetNbinsZ();
 	int pt_N = h_pt1pt2->GetNbinsX();
 
+	// fakes: reco dijets with no matching truth dijet (recorded separately, since
+	// response[centbin].Fake() is never called in getDijets.C)
+	TH3F *h_pt1pt2fake = (TH3F *)f->Get("h_pt1pt2fake");
+
 	std::string cent_str[] = {"0-20%", "20-40%", "40-60%", "60-80%"};
 
 	for (int ic = 0; ic < cent_N; ic++)
@@ -65,43 +69,49 @@ void drawResponseMatrix()
 
 		c->Print(Form("plots/response_matrix_cent%i.pdf", ic));
 
-		// fakes: reco dijets with no matching truth dijet (recorded separately, since
-		// response[centbin].Fake() is never called in getDijets.C), flattened over the
-		// same (p_{T,1}#times%d + p_{T,2}) global-bin axis as the response matrix's measured axis
-		TH1D *h_fake = (TH1D *)f->Get(Form("hFake1D%i", ic));
-		h_fake->SetName(Form("h_fake_cent%i", ic));
-		h_fake->SetTitle(Form("cent %s;measured global bin (p_{T,1}^{reco}#times%d + p_{T,2}^{reco});fakes",
-							   cent_str[ic].c_str(), pt_N));
-		h_fake->SetLineColor(kBlack);
-		h_fake->SetMarkerColor(kBlack);
-		h_fake->SetMarkerStyle(20);
+		// fakes, as a 2D (p_{T,1}^{reco}, p_{T,2}^{reco}) histogram
+		h_pt1pt2fake->GetZaxis()->SetRange(ic + 1, ic + 1);
+		TH2D *h_fake2D = (TH2D *)h_pt1pt2fake->Project3D("yx");
+		h_fake2D->SetName(Form("h_fake2D_cent%i", ic));
+		h_fake2D->SetTitle(Form("cent %s fakes;p_{T,1}^{reco} [GeV];p_{T,2}^{reco} [GeV]", cent_str[ic].c_str()));
 
 		TCanvas *cFake = new TCanvas(Form("c_fake_cent%i", ic), Form("c_fake_cent%i", ic), 700, 700);
-		cFake->SetLogy();
-		h_fake->Draw("PE");
+		cFake->SetRightMargin(0.15);
+		cFake->SetLogz();
+		h_fake2D->Draw("colz");
 
 		TLegend *fakeLeg = (TLegend *)sphenixLeg->Clone();
 		fakeLeg->Draw();
 
 		cFake->Print(Form("plots/response_fakes_cent%i.pdf", ic));
 
-		// misses: truth dijets with no matching reco dijet, i.e. the truth entries filled via
-		// response[centbin].Miss() rather than response[centbin].Fill(); computed as the total
-		// truth distribution (hTrue1D, matched+missed) minus the matched-truth projection of
-		// the response matrix (its true-axis, i.e. Y, projection)
-		TH1D *h_true = (TH1D *)f->Get(Form("hTrue1D%i", ic));
-		TH1D *h_matchedtrue = (TH1D *)h_response->ProjectionY(Form("h_matchedtrue_cent%i", ic));
-		TH1D *h_miss = (TH1D *)h_true->Clone(Form("h_miss_cent%i", ic));
-		h_miss->Add(h_matchedtrue, -1);
-		h_miss->SetTitle(Form("cent %s;true global bin (p_{T,1}^{truth}#times%d + p_{T,2}^{truth});misses",
-							   cent_str[ic].c_str(), pt_N));
-		h_miss->SetLineColor(kBlack);
-		h_miss->SetMarkerColor(kBlack);
-		h_miss->SetMarkerStyle(20);
+		// misses, as a 2D (p_{T,1}^{truth}, p_{T,2}^{truth}) histogram: there's no standalone
+		// miss-only 2D histogram written to disk, since response[centbin].Miss() only feeds the
+		// flattened hTrue1D/the response object, and hTrue2D%i (2D p_{T,1},p_{T,2} truth) holds
+		// matched+missed truth combined. So unflatten the response matrix's matched-truth axis
+		// (its Y projection, over the flattened global-bin truth axis) back into hTrue2D%i's
+		// (p_{T,1},p_{T,2}) binning using the same GlobalBin mapping as getDijets.C
+		// (gTrue = (ix-1)*pt_N + iy, ix = p_{T,1} bin, iy = p_{T,2} bin), then subtract that
+		// matched-truth 2D histogram from the total truth to leave the misses alone.
+		TH2D *h_true2D = (TH2D *)f->Get(Form("hTrue2D%i", ic));
+		TH1D *h_matchedtrue1D = (TH1D *)h_response->ProjectionY(Form("h_matchedtrue1D_cent%i", ic));
+		TH2D *h_matchedtrue2D = (TH2D *)h_true2D->Clone(Form("h_matchedtrue2D_cent%i", ic));
+		h_matchedtrue2D->Reset();
+		for (int g = 1; g <= h_matchedtrue1D->GetNbinsX(); g++)
+		{
+			int ix = (g - 1) / pt_N + 1;
+			int iy = (g - 1) % pt_N + 1;
+			h_matchedtrue2D->SetBinContent(ix, iy, h_matchedtrue1D->GetBinContent(g));
+			h_matchedtrue2D->SetBinError(ix, iy, h_matchedtrue1D->GetBinError(g));
+		}
+		TH2D *h_miss2D = (TH2D *)h_true2D->Clone(Form("h_miss2D_cent%i", ic));
+		h_miss2D->Add(h_matchedtrue2D, -1);
+		h_miss2D->SetTitle(Form("cent %s misses;p_{T,1}^{truth} [GeV];p_{T,2}^{truth} [GeV]", cent_str[ic].c_str()));
 
 		TCanvas *cMiss = new TCanvas(Form("c_miss_cent%i", ic), Form("c_miss_cent%i", ic), 700, 700);
-		cMiss->SetLogy();
-		h_miss->Draw("PE");
+		cMiss->SetRightMargin(0.15);
+		cMiss->SetLogz();
+		h_miss2D->Draw("colz");
 
 		TLegend *missLeg = (TLegend *)sphenixLeg->Clone();
 		missLeg->Draw();
