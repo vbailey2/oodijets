@@ -95,9 +95,10 @@ void drawXJStatUncertainty()
 
 			TCanvas *c = new TCanvas(Form("c_xjstat_pt%d_%d", ipt, i), Form("c_xjstat_pt%d_%d", ipt, i), 700, 700);
 
-			TLegend *sphenixLeg = new TLegend(.15, .8, .45, .92);
+			// sPHENIX branding, top-left: only 2 short lines, so this can run large
+			TLegend *sphenixLeg = new TLegend(.15, .84, .45, .92);
 			sphenixLeg->SetFillStyle(0);
-			//sphenixLeg->SetTextSize(0.032);
+			sphenixLeg->SetTextSize(0.04);
 			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
 			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4", "");
 
@@ -110,25 +111,33 @@ void drawXJStatUncertainty()
 			{
 				gAtlas->Draw("L SAME");
 
-				TLegend *dataLeg = new TLegend(.45, .55, .92, .88);
-				dataLeg->SetFillStyle(0);
-				dataLeg->SetTextSize(0.028);
-				//dataLeg->SetNColumns(2);
-				dataLeg->AddEntry(gratio, "sPHENIX statistical reach", "ep");
-				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 200 GeV", "");
-				dataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4, |#eta| < 0.7", "");
-				dataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
-				dataLeg->AddEntry(gAtlas, "ATLAS arXiv:2606.20463", "l");
-				dataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
-				dataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8, |y| < 2.1", "");
-				dataLeg->AddEntry("", "79 < p_{T1} < 89 GeV", "");
-				dataLeg->Draw();
+				// split the sPHENIX and ATLAS data descriptions into their own stacked boxes
+				// (each only 4 short rows) instead of one cramped 8-row box, so both can run
+				// at a larger, more legible text size
+				TLegend *sphenixDataLeg = new TLegend(.52, .76, .92, .92);
+				sphenixDataLeg->SetFillStyle(0);
+				sphenixDataLeg->SetTextSize(0.030);
+				sphenixDataLeg->AddEntry(gratio, "sPHENIX statistical reach", "ep");
+				sphenixDataLeg->AddEntry("", "#sqrt{s_{NN}} = 200 GeV", "");
+				sphenixDataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4, |#eta| < 0.7", "");
+				sphenixDataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
+				sphenixDataLeg->Draw();
+
+				TLegend *atlasDataLeg = new TLegend(.52, .58, .92, .74);
+				atlasDataLeg->SetFillStyle(0);
+				atlasDataLeg->SetTextSize(0.030);
+				atlasDataLeg->AddEntry(gAtlas, "ATLAS arXiv:2606.20463", "l");
+				atlasDataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
+				atlasDataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8, |y| < 2.1", "");
+				atlasDataLeg->AddEntry("", "79 < p_{T1} < 89 GeV", "");
+				atlasDataLeg->Draw();
 			}
 			else
 			{
-				TLegend *dataLeg = new TLegend(.65, .8, .88, .88);
+				// single-row legend: can run much larger
+				TLegend *dataLeg = new TLegend(.58, .84, .88, .92);
 				dataLeg->SetFillStyle(0);
-				dataLeg->SetTextSize(0.032);
+				dataLeg->SetTextSize(0.05);
 				dataLeg->AddEntry(gratio, label.c_str(), "lep");
 				dataLeg->Draw();
 			}
