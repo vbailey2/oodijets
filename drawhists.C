@@ -124,7 +124,8 @@ void drawhists(int isunfold = 0)
 		else
 			c->cd();
 		if (!isunfold)
-			cleg->AddEntry("", Form("%2.1f < p_{T}^{calib} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+			cleg->AddEntry("", Form("%2.1f < p_{T,1}^{calib} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
+			cleg->AddEntry("", "p_{T,2}^{calib} > 9.4 GeV", "");
 		else
 			cleg->AddEntry("", Form("%2.1f < p_{T} < %2.1f GeV", h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 1), h_xj[0]->GetYaxis()->GetBinLowEdge(ipt + 2)), "");
 		for (int icent = 0; icent < ncent; icent++)

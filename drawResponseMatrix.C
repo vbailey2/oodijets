@@ -64,6 +64,49 @@ void drawResponseMatrix()
 		sphenixLeg->Draw();
 
 		c->Print(Form("plots/response_matrix_cent%i.pdf", ic));
+
+		// fakes: reco dijets with no matching truth dijet (recorded separately, since
+		// response[centbin].Fake() is never called in getDijets.C), flattened over the
+		// same (p_{T,1}#times%d + p_{T,2}) global-bin axis as the response matrix's measured axis
+		TH1D *h_fake = (TH1D *)f->Get(Form("hFake1D%i", ic));
+		h_fake->SetName(Form("h_fake_cent%i", ic));
+		h_fake->SetTitle(Form("cent %s;measured global bin (p_{T,1}^{reco}#times%d + p_{T,2}^{reco});fakes",
+							   cent_str[ic].c_str(), pt_N));
+		h_fake->SetLineColor(kBlack);
+		h_fake->SetMarkerColor(kBlack);
+		h_fake->SetMarkerStyle(20);
+
+		TCanvas *cFake = new TCanvas(Form("c_fake_cent%i", ic), Form("c_fake_cent%i", ic), 700, 700);
+		cFake->SetLogy();
+		h_fake->Draw("PE");
+
+		TLegend *fakeLeg = (TLegend *)sphenixLeg->Clone();
+		fakeLeg->Draw();
+
+		cFake->Print(Form("plots/response_fakes_cent%i.pdf", ic));
+
+		// misses: truth dijets with no matching reco dijet, i.e. the truth entries filled via
+		// response[centbin].Miss() rather than response[centbin].Fill(); computed as the total
+		// truth distribution (hTrue1D, matched+missed) minus the matched-truth projection of
+		// the response matrix (its true-axis, i.e. Y, projection)
+		TH1D *h_true = (TH1D *)f->Get(Form("hTrue1D%i", ic));
+		TH1D *h_matchedtrue = (TH1D *)h_response->ProjectionY(Form("h_matchedtrue_cent%i", ic));
+		TH1D *h_miss = (TH1D *)h_true->Clone(Form("h_miss_cent%i", ic));
+		h_miss->Add(h_matchedtrue, -1);
+		h_miss->SetTitle(Form("cent %s;true global bin (p_{T,1}^{truth}#times%d + p_{T,2}^{truth});misses",
+							   cent_str[ic].c_str(), pt_N));
+		h_miss->SetLineColor(kBlack);
+		h_miss->SetMarkerColor(kBlack);
+		h_miss->SetMarkerStyle(20);
+
+		TCanvas *cMiss = new TCanvas(Form("c_miss_cent%i", ic), Form("c_miss_cent%i", ic), 700, 700);
+		cMiss->SetLogy();
+		h_miss->Draw("PE");
+
+		TLegend *missLeg = (TLegend *)sphenixLeg->Clone();
+		missLeg->Draw();
+
+		cMiss->Print(Form("plots/response_misses_cent%i.pdf", ic));
 	}
 
 	std::cout << "all done" << std::endl;
