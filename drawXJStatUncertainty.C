@@ -99,7 +99,7 @@ void drawXJStatUncertainty()
 			TLegend *sphenixLeg = new TLegend(.15, .84, .45, .92);
 			sphenixLeg->SetFillStyle(0);
 			sphenixLeg->SetTextSize(0.04);
-			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Work in Progress", "");
 			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4", "");
 
 			gratio->Draw("AP");
@@ -118,7 +118,7 @@ void drawXJStatUncertainty()
 				sphenixDataLeg->SetFillStyle(0);
 				sphenixDataLeg->SetTextSize(0.030);
 				sphenixDataLeg->AddEntry(gratio, "sPHENIX statistical reach", "ep");
-				sphenixDataLeg->AddEntry("", "#sqrt{s_{NN}} = 200 GeV", "");
+				sphenixDataLeg->AddEntry("", Form("#sqrt{s_{NN}} = 200 GeV, %s",label.c_str()), "");
 				sphenixDataLeg->AddEntry("", "|#Delta#phi| > 3#pi/4, |#eta| < 0.7", "");
 				sphenixDataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
 				sphenixDataLeg->Draw();
@@ -127,7 +127,7 @@ void drawXJStatUncertainty()
 				atlasDataLeg->SetFillStyle(0);
 				atlasDataLeg->SetTextSize(0.030);
 				atlasDataLeg->AddEntry(gAtlas, "ATLAS arXiv:2606.20463", "l");
-				atlasDataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV", "");
+				atlasDataLeg->AddEntry("", "#sqrt{s_{NN}} = 5.36 TeV, 0-10%%", "");
 				atlasDataLeg->AddEntry("", "|#Delta#phi| > 7#pi/8, |y| < 2.1", "");
 				atlasDataLeg->AddEntry("", "79 < p_{T1} < 89 GeV", "");
 				atlasDataLeg->Draw();
