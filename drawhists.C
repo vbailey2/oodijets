@@ -41,7 +41,7 @@ void drawhists(int isunfold = 0)
 
 	TLegend *leg = new TLegend(.15, .75, .4, .92);
 	leg->SetFillStyle(0);
-	leg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
+	leg->AddEntry("", "#it{#bf{sPHENIX}} Work in Progress", "");
 	// leg->AddEntry("","Pythia + HIJING","");
 	leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
 	leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");

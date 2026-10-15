@@ -114,7 +114,7 @@ void drawXJStatUncertainty()
 				// split the sPHENIX and ATLAS data descriptions into their own stacked boxes
 				// (each only 4 short rows) instead of one cramped 8-row box, so both can run
 				// at a larger, more legible text size
-				TLegend *sphenixDataLeg = new TLegend(.5, .71, .9, .87);
+				TLegend *sphenixDataLeg = new TLegend(.5, .71, .8, .87);
 				sphenixDataLeg->SetFillStyle(0);
 				sphenixDataLeg->SetTextSize(0.030);
 				sphenixDataLeg->AddEntry(gratio, "sPHENIX statistical precision", "ep");
@@ -123,7 +123,7 @@ void drawXJStatUncertainty()
 				sphenixDataLeg->AddEntry("", Form("%.1f < p_{T1} < %.1f GeV", pt1low, pt1high), "");
 				sphenixDataLeg->Draw();
 
-				TLegend *atlasDataLeg = new TLegend(.5, .53, .9, .69);
+				TLegend *atlasDataLeg = new TLegend(.5, .53, .8, .69);
 				atlasDataLeg->SetFillStyle(0);
 				atlasDataLeg->SetTextSize(0.030);
 				atlasDataLeg->AddEntry(gAtlas, "ATLAS arXiv:2606.20463", "l");

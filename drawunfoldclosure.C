@@ -34,7 +34,7 @@ void drawunfoldclosure(bool ishalf = 1)
 
   TLegend *leg = new TLegend(.15, .7, .4, .92);
   leg->SetFillStyle(0);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Work in Progress", "");
   leg->AddEntry("", "Pythia8 + HIJING", "");
   leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
   leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
@@ -42,7 +42,7 @@ void drawunfoldclosure(bool ishalf = 1)
   TLegend *cleg = new TLegend(.15, .6, .4, .7);
   cleg->SetFillStyle(0);
 
-  TLegend *hleg = new TLegend(.65, .7, .9, .92);
+  TLegend *hleg = new TLegend(.65, .6, .9, .85);
   hleg->SetFillStyle(0);
 
   int colors[] = {1, 2, 4, kGreen + 2, kViolet, kCyan, kOrange + 2, kMagenta + 2, kAzure - 2};

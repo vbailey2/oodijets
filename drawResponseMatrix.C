@@ -49,19 +49,20 @@ void drawResponseMatrix()
 
 		TH2D *h_response = (TH2D *)response->Hresponse();
 		h_response->SetName(Form("h_response_flat_cent%i", ic));
-		h_response->SetTitle(Form("cent %s;measured global bin (p_{T,1}^{reco}#times%d + p_{T,2}^{reco});true global bin (p_{T,1}^{truth}#times%d + p_{T,2}^{truth})",
-								   cent_str[ic].c_str(), pt_N, pt_N));
+		h_response->SetTitle(Form("cent %s;measured global bin (p_{T,1}^{reco}#times N_{bins} + p_{T,2}^{reco});true global bin (p_{T,1}^{truth}#times N_{bins} + p_{T,2}^{truth})",
+					  cent_str[ic].c_str()));
 
 		TCanvas *c = new TCanvas(Form("c_response_cent%i", ic), Form("c_response_cent%i", ic), 700, 700);
 		c->SetRightMargin(0.15);
 		c->SetLogz();
-
+		
+		h_response->GetXaxis()->SetTitleOffset(1.15);
 		h_response->Draw("colz");
 
 		TLegend *sphenixLeg = new TLegend(.15, .75, .45, .92);
 		sphenixLeg->SetFillStyle(0);
 		sphenixLeg->SetTextSize(0.032);
-		sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
+		sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Work in Progress", "");
 		sphenixLeg->AddEntry("", "Pythia8 + HIJING O+O #sqrt{s_{NN}} = 200 GeV", "");
 		sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 		sphenixLeg->AddEntry("", Form("%s",cent_str[ic].c_str()), "");
