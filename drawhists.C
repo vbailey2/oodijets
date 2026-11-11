@@ -171,8 +171,8 @@ void drawhists(int isunfold = 0)
 				hRatio->SetMarkerColor(colors[icent]);
 				hRatio->SetLineColor(colors[icent]);
 
-				hRatio->SetMinimum(0.);
-				hRatio->SetMaximum(5.);
+				hRatio->SetMinimum(0.5);
+				hRatio->SetMaximum(2.);
 				hRatio->GetXaxis()->SetRangeUser(0.2, 1);
 				hRatio->GetXaxis()->SetTitle("x_{J}");
 				hRatio->GetXaxis()->SetTitleSize(0.12);
