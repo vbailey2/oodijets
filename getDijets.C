@@ -248,8 +248,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	// RooUnfoldResponse::Fake() doesn't work in our RooUnfold version; dropped after unfolding
 	int fakeBin = nGlobalBins + 1;
 
-	// raw (unweighted) MC counts per (gReco, gTrue) migration cell and per sample (sample = 0-8)
-	TH3D *h_sample_counts = new TH3D("h_sample_counts", "", nGlobalBins, 0.5, nGlobalBins + 0.5, nGlobalBins, 0.5, nGlobalBins + 0.5, 9, -0.5, 8.5);
+	// raw (unweighted) MC counts per (gReco, gTrue) migration cell and per sample (sample = 0-8);
+	// the last gTrue bin is the fake bin, so fakes get the same low-statistics gating as matched entries
+	TH3D *h_sample_counts = new TH3D("h_sample_counts", "", nGlobalBins, 0.5, nGlobalBins + 0.5, nGlobalBins + 1, 0.5, nGlobalBins + 1.5, 9, -0.5, 8.5);
 
 	for (int i = 0; i < cent_N; i++)
 	{
@@ -654,9 +655,13 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5);
 					hMeas1D[centbin]->Fill(gReco, weight * 0.5);
 					hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-					response[centbin].Fill(gReco, fakeBin, weight * 0.5);
-					response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+					if (passCell(gReco, fakeBin))
+						response[centbin].Fill(gReco, fakeBin, weight * 0.5);
+					if (passCell(gRecosym, fakeBin))
+						response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
 					hTrue1D[centbin]->Fill(fakeBin, weight);
+					h_sample_counts->Fill(gReco, fakeBin, sample);
+					h_sample_counts->Fill(gRecosym, fakeBin, sample);
 					hFake1D[centbin]->Fill(gReco, weight * 0.5);
 					hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
 
@@ -671,8 +676,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 						hMeas2DA[centbin]->Fill(subpt, leadpt, weight * 0.5);
 						hMeas1DA[centbin]->Fill(gReco, weight * 0.5);
 						hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
-						responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
-						responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+						if (passCell(gReco, fakeBin))
+							responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
+						if (passCell(gRecosym, fakeBin))
+							responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
 						hTrue1DA[centbin]->Fill(fakeBin, weight);
 						hFake1DA[centbin]->Fill(gReco, weight * 0.5);
 						hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
@@ -683,8 +690,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 						hMeas2DB[centbin]->Fill(subpt, leadpt, weight * 0.5);
 						hMeas1DB[centbin]->Fill(gReco, weight * 0.5);
 						hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
-						responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
-						responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+						if (passCell(gReco, fakeBin))
+							responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
+						if (passCell(gRecosym, fakeBin))
+							responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
 						hTrue1DB[centbin]->Fill(fakeBin, weight);
 						hFake1DB[centbin]->Fill(gReco, weight * 0.5);
 						hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
@@ -697,9 +706,13 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 				hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5);
 				hMeas1D[centbin]->Fill(gReco, weight * 0.5);
 				hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-				response[centbin].Fill(gReco, fakeBin, weight * 0.5);
-				response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+				if (passCell(gReco, fakeBin))
+					response[centbin].Fill(gReco, fakeBin, weight * 0.5);
+				if (passCell(gRecosym, fakeBin))
+					response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
 				hTrue1D[centbin]->Fill(fakeBin, weight);
+				h_sample_counts->Fill(gReco, fakeBin, sample);
+				h_sample_counts->Fill(gRecosym, fakeBin, sample);
 				hFake1D[centbin]->Fill(gReco, weight * 0.5);
 				hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
 				h_pt1pt2fake->Fill(leadpt, subpt, centbin, weight * 0.5);
@@ -714,8 +727,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
 					hFake1DA[centbin]->Fill(gReco, weight * 0.5);
 					hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
-					responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
-					responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+					if (passCell(gReco, fakeBin))
+						responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
+					if (passCell(gRecosym, fakeBin))
+						responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
 					hTrue1DA[centbin]->Fill(fakeBin, weight);
 				}
 				else
@@ -726,8 +741,10 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
 					hFake1DB[centbin]->Fill(gReco, weight * 0.5);
 					hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
-					responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
-					responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+					if (passCell(gReco, fakeBin))
+						responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
+					if (passCell(gRecosym, fakeBin))
+						responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
 					hTrue1DB[centbin]->Fill(fakeBin, weight);
 				}
 			}
