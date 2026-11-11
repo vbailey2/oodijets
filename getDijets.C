@@ -520,103 +520,106 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 						   h_sample_counts_prev->GetZaxis()->FindBin(sample)) > sample_count_threshold;
 			};
 
+			// fakes migrate from their reco cell into the extra fake truth bin; the response and the
+			// closure measured/truth histograms are gated per cell like matched entries, while
+			// hFake1D/h_pt1pt2fake keep all fakes for diagnostics
+			auto fillFake = [&]()
+			{
+				h_sample_counts->Fill(gReco, fakeBin, sample);
+				h_sample_counts->Fill(gRecosym, fakeBin, sample);
+				hFake1D[centbin]->Fill(gReco, weight * 0.5);
+				hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
+				h_pt1pt2fake->Fill(leadpt, subpt, centbin, weight * 0.5);
+				h_pt1pt2fake->Fill(subpt, leadpt, centbin, weight * 0.5);
+				if (half == 0)
+				{
+					hFake1DA[centbin]->Fill(gReco, weight * 0.5);
+					hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
+				}
+				else
+				{
+					hFake1DB[centbin]->Fill(gReco, weight * 0.5);
+					hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
+				}
+
+				auto fillFakeCell = [&](bool pass, int greco, float recox, float recoy,
+										TH2D *hMeas2, TH1D *hMeas1, TH1D *hTrue1, RooUnfoldResponse &resp)
+				{
+					if (!pass)
+						return;
+					hMeas2->Fill(recox, recoy, weight * 0.5);
+					hMeas1->Fill(greco, weight * 0.5);
+					hTrue1->Fill(fakeBin, weight * 0.5);
+					resp.Fill(greco, fakeBin, weight * 0.5);
+				};
+				bool passReco = passCell(gReco, fakeBin);
+				bool passRecosym = passCell(gRecosym, fakeBin);
+
+				fillFakeCell(passReco, gReco, leadpt, subpt, hMeas2D[centbin], hMeas1D[centbin], hTrue1D[centbin], response[centbin]);
+				fillFakeCell(passRecosym, gRecosym, subpt, leadpt, hMeas2D[centbin], hMeas1D[centbin], hTrue1D[centbin], response[centbin]);
+				if (half == 0)
+				{
+					fillFakeCell(passReco, gReco, leadpt, subpt, hMeas2DA[centbin], hMeas1DA[centbin], hTrue1DA[centbin], responseA[centbin]);
+					fillFakeCell(passRecosym, gRecosym, subpt, leadpt, hMeas2DA[centbin], hMeas1DA[centbin], hTrue1DA[centbin], responseA[centbin]);
+				}
+				else
+				{
+					fillFakeCell(passReco, gReco, leadpt, subpt, hMeas2DB[centbin], hMeas1DB[centbin], hTrue1DB[centbin], responseB[centbin]);
+					fillFakeCell(passRecosym, gRecosym, subpt, leadpt, hMeas2DB[centbin], hMeas1DB[centbin], hTrue1DB[centbin], responseB[centbin]);
+				}
+			};
+
 			// std::cout<<"is reco "<<recodijet<<" is truth "<<truthdijet<<" Match? "<<ismatch<<std::endl;
 			if (ismatch)
 			{
-				hMeas2D[centbin]->Fill(leadpt, subpt, weight * 0.5);
-				hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5); // symmetrize
-				hTrue2D[centbin]->Fill(leadpttrue, subpttrue, weight * 0.5);
-				hTrue2D[centbin]->Fill(subpttrue, leadpttrue, weight * 0.5);
-
-				hMeas1D[centbin]->Fill(gReco, weight * 0.5);
-				hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-				hTrue1D[centbin]->Fill(gTrue, weight * 0.5);
-				hTrue1D[centbin]->Fill(gTruesym, weight * 0.5);
+				// the event fills two (reco, truth) migration cells: (lead,sub) reco with its matched truth
+				// ordering, and the symmetrized (sub,lead) reco with the opposite. If swapmatch, the reco
+				// lead/sublead pt bin actually corresponds to the truth sublead/lead pt bin.
+				// Each cell, and the measured/truth histograms used in the closure test, is only filled if
+				// that cell passes the low-statistics gating, so the closure MC matches the response.
+				int gTrueForReco = swapmatch ? gTruesym : gTrue;
+				int gTrueForRecosym = swapmatch ? gTrue : gTruesym;
+				float pt1TrueForReco = swapmatch ? subpttrue : leadpttrue;
+				float pt2TrueForReco = swapmatch ? leadpttrue : subpttrue;
 
 				// raw (unweighted) per-sample migration-cell statistics, filled once per event
-				if (!swapmatch)
-				{
-					h_sample_counts->Fill(gReco, gTrue, sample);
-					h_sample_counts->Fill(gRecosym, gTruesym, sample);
-				}
-				else
-				{
-					h_sample_counts->Fill(gReco, gTruesym, sample);
-					h_sample_counts->Fill(gRecosym, gTrue, sample);
-				}
+				h_sample_counts->Fill(gReco, gTrueForReco, sample);
+				h_sample_counts->Fill(gRecosym, gTrueForRecosym, sample);
 
-				// if swapmatch, the reco lead/sublead pt bin actually corresponds to the truth sublead/lead pt bin
-				if (!swapmatch)
+				auto fillCell = [&](bool pass, int greco, int gtrue, float recox, float recoy, float truex, float truey,
+									TH2D *hMeas2, TH2D *hTrue2, TH1D *hMeas1, TH1D *hTrue1, RooUnfoldResponse &resp)
 				{
-					if (passCell(gReco, gTrue))
-						response[centbin].Fill(gReco, gTrue, weight * 0.5);
-					if (passCell(gRecosym, gTruesym))
-						response[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
-				}
-				else
-				{
-					if (passCell(gReco, gTruesym))
-						response[centbin].Fill(gReco, gTruesym, weight * 0.5);
-					if (passCell(gRecosym, gTrue))
-						response[centbin].Fill(gRecosym, gTrue, weight * 0.5);
-				}
+					if (!pass)
+						return;
+					hMeas2->Fill(recox, recoy, weight * 0.5);
+					hTrue2->Fill(truex, truey, weight * 0.5);
+					hMeas1->Fill(greco, weight * 0.5);
+					hTrue1->Fill(gtrue, weight * 0.5);
+					resp.Fill(greco, gtrue, weight * 0.5);
+				};
+
+				bool passReco = passCell(gReco, gTrueForReco);
+				bool passRecosym = passCell(gRecosym, gTrueForRecosym);
+
+				fillCell(passReco, gReco, gTrueForReco, leadpt, subpt, pt1TrueForReco, pt2TrueForReco,
+						 hMeas2D[centbin], hTrue2D[centbin], hMeas1D[centbin], hTrue1D[centbin], response[centbin]);
+				fillCell(passRecosym, gRecosym, gTrueForRecosym, subpt, leadpt, pt2TrueForReco, pt1TrueForReco,
+						 hMeas2D[centbin], hTrue2D[centbin], hMeas1D[centbin], hTrue1D[centbin], response[centbin]);
 
 				if (half == 0)
 				{
-					hMeas2DA[centbin]->Fill(leadpt, subpt, weight * 0.5);
-					hMeas2DA[centbin]->Fill(subpt, leadpt, weight * 0.5);
-
-					hTrue2DA[centbin]->Fill(leadpttrue, subpttrue, weight * 0.5);
-					hTrue2DA[centbin]->Fill(subpttrue, leadpttrue, weight * 0.5);
-
-					hMeas1DA[centbin]->Fill(gReco, weight * 0.5);
-					hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
-					hTrue1DA[centbin]->Fill(gTrue, weight * 0.5);
-					hTrue1DA[centbin]->Fill(gTruesym, weight * 0.5);
-					if (!swapmatch)
-					{
-						if (passCell(gReco, gTrue))
-							responseA[centbin].Fill(gReco, gTrue, weight * 0.5);
-						if (passCell(gRecosym, gTruesym))
-							responseA[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
-					}
-					else
-					{
-						if (passCell(gReco, gTruesym))
-							responseA[centbin].Fill(gReco, gTruesym, weight * 0.5);
-						if (passCell(gRecosym, gTrue))
-							responseA[centbin].Fill(gRecosym, gTrue, weight * 0.5);
-					}
+					fillCell(passReco, gReco, gTrueForReco, leadpt, subpt, pt1TrueForReco, pt2TrueForReco,
+							 hMeas2DA[centbin], hTrue2DA[centbin], hMeas1DA[centbin], hTrue1DA[centbin], responseA[centbin]);
+					fillCell(passRecosym, gRecosym, gTrueForRecosym, subpt, leadpt, pt2TrueForReco, pt1TrueForReco,
+							 hMeas2DA[centbin], hTrue2DA[centbin], hMeas1DA[centbin], hTrue1DA[centbin], responseA[centbin]);
 				}
 				else
 				{
-					hMeas2DB[centbin]->Fill(leadpt, subpt, weight * 0.5);
-					hMeas2DB[centbin]->Fill(subpt, leadpt, weight * 0.5);
-
-					hTrue2DB[centbin]->Fill(leadpttrue, subpttrue, weight * 0.5);
-					hTrue2DB[centbin]->Fill(subpttrue, leadpttrue, weight * 0.5);
-
-					hMeas1DB[centbin]->Fill(gReco, weight * 0.5);
-					hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
-					hTrue1DB[centbin]->Fill(gTrue, weight * 0.5);
-					hTrue1DB[centbin]->Fill(gTruesym, weight * 0.5);
-					if (!swapmatch)
-					{
-						if (passCell(gReco, gTrue))
-							responseB[centbin].Fill(gReco, gTrue, weight * 0.5);
-						if (passCell(gRecosym, gTruesym))
-							responseB[centbin].Fill(gRecosym, gTruesym, weight * 0.5);
-					}
-					else
-					{
-						if (passCell(gReco, gTruesym))
-							responseB[centbin].Fill(gReco, gTruesym, weight * 0.5);
-						if (passCell(gRecosym, gTrue))
-							responseB[centbin].Fill(gRecosym, gTrue, weight * 0.5);
-					}
+					fillCell(passReco, gReco, gTrueForReco, leadpt, subpt, pt1TrueForReco, pt2TrueForReco,
+							 hMeas2DB[centbin], hTrue2DB[centbin], hMeas1DB[centbin], hTrue1DB[centbin], responseB[centbin]);
+					fillCell(passRecosym, gRecosym, gTrueForRecosym, subpt, leadpt, pt2TrueForReco, pt1TrueForReco,
+							 hMeas2DB[centbin], hTrue2DB[centbin], hMeas1DB[centbin], hTrue1DB[centbin], responseB[centbin]);
 				}
-
-				// std::cout<<"Filling response"<<std::endl;
 			}
 
 			else if (truthdijet) // umatched truth dijet is miss
@@ -651,102 +654,14 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 
 				if (recodijet) // if there's also a reco dijet and they are just unmatched this is also a fake
 				{
-					hMeas2D[centbin]->Fill(leadpt, subpt, weight * 0.5);
-					hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5);
-					hMeas1D[centbin]->Fill(gReco, weight * 0.5);
-					hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-					if (passCell(gReco, fakeBin))
-						response[centbin].Fill(gReco, fakeBin, weight * 0.5);
-					if (passCell(gRecosym, fakeBin))
-						response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
-					hTrue1D[centbin]->Fill(fakeBin, weight);
-					h_sample_counts->Fill(gReco, fakeBin, sample);
-					h_sample_counts->Fill(gRecosym, fakeBin, sample);
-					hFake1D[centbin]->Fill(gReco, weight * 0.5);
-					hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
-
-					h_pt1pt2fake->Fill(leadpt, subpt, centbin, weight * 0.5);
-					h_pt1pt2fake->Fill(subpt, leadpt, centbin, weight * 0.5);
-					// std::cout<<"Filling fake & miss"<<std::endl;
+					fillFake();
 					h_counting[centbin]->Fill(5);
-
-					if (half == 0)
-					{
-						hMeas2DA[centbin]->Fill(leadpt, subpt, weight * 0.5);
-						hMeas2DA[centbin]->Fill(subpt, leadpt, weight * 0.5);
-						hMeas1DA[centbin]->Fill(gReco, weight * 0.5);
-						hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
-						if (passCell(gReco, fakeBin))
-							responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
-						if (passCell(gRecosym, fakeBin))
-							responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
-						hTrue1DA[centbin]->Fill(fakeBin, weight);
-						hFake1DA[centbin]->Fill(gReco, weight * 0.5);
-						hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
-					}
-					else
-					{
-						hMeas2DB[centbin]->Fill(leadpt, subpt, weight * 0.5);
-						hMeas2DB[centbin]->Fill(subpt, leadpt, weight * 0.5);
-						hMeas1DB[centbin]->Fill(gReco, weight * 0.5);
-						hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
-						if (passCell(gReco, fakeBin))
-							responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
-						if (passCell(gRecosym, fakeBin))
-							responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
-						hTrue1DB[centbin]->Fill(fakeBin, weight);
-						hFake1DB[centbin]->Fill(gReco, weight * 0.5);
-						hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
-					}
 				}
 			}
 			else if (recodijet) // no truth dijet but there is a reco, this is a fake
 			{
-				hMeas2D[centbin]->Fill(leadpt, subpt, weight * 0.5);
-				hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5);
-				hMeas1D[centbin]->Fill(gReco, weight * 0.5);
-				hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-				if (passCell(gReco, fakeBin))
-					response[centbin].Fill(gReco, fakeBin, weight * 0.5);
-				if (passCell(gRecosym, fakeBin))
-					response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
-				hTrue1D[centbin]->Fill(fakeBin, weight);
-				h_sample_counts->Fill(gReco, fakeBin, sample);
-				h_sample_counts->Fill(gRecosym, fakeBin, sample);
-				hFake1D[centbin]->Fill(gReco, weight * 0.5);
-				hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
-				h_pt1pt2fake->Fill(leadpt, subpt, centbin, weight * 0.5);
-				h_pt1pt2fake->Fill(subpt, leadpt, centbin, weight * 0.5);
+				fillFake();
 				h_counting[centbin]->Fill(5);
-
-				if (half == 0)
-				{
-					hMeas2DA[centbin]->Fill(leadpt, subpt, weight * 0.5);
-					hMeas2DA[centbin]->Fill(subpt, leadpt, weight * 0.5);
-					hMeas1DA[centbin]->Fill(gReco, weight * 0.5);
-					hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
-					hFake1DA[centbin]->Fill(gReco, weight * 0.5);
-					hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
-					if (passCell(gReco, fakeBin))
-						responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
-					if (passCell(gRecosym, fakeBin))
-						responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
-					hTrue1DA[centbin]->Fill(fakeBin, weight);
-				}
-				else
-				{
-					hMeas2DB[centbin]->Fill(leadpt, subpt, weight * 0.5);
-					hMeas2DB[centbin]->Fill(subpt, leadpt, weight * 0.5);
-					hMeas1DB[centbin]->Fill(gReco, weight * 0.5);
-					hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
-					hFake1DB[centbin]->Fill(gReco, weight * 0.5);
-					hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
-					if (passCell(gReco, fakeBin))
-						responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
-					if (passCell(gRecosym, fakeBin))
-						responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
-					hTrue1DB[centbin]->Fill(fakeBin, weight);
-				}
 			}
 		}
 	}
