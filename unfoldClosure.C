@@ -30,7 +30,6 @@ void unfoldClosure(int nIterations = 1)
   TH2D *hUnfolded2D[cent_N];
   TH1D *hTrue1D[cent_N];
   TH1D *hMeas1D[cent_N];
-  TH1D *hFake1D[cent_N];
   TH1D *hUnfolded1D[cent_N];
 
   // for half closure
@@ -39,7 +38,6 @@ void unfoldClosure(int nIterations = 1)
   TH2D *hUnfolded2DHalf[cent_N];
   TH1D *hTrue1DHalf[cent_N];
   TH1D *hMeas1DHalf[cent_N];
-  TH1D *hFake1DHalf[cent_N];
   TH1D *hUnfolded1DHalf[cent_N];
 
   TH3F *hUnfolded3D = (TH3F *)h_pt1pt2->Clone();
@@ -66,7 +64,6 @@ void unfoldClosure(int nIterations = 1)
     hMeas2D[ic] = (TH2D *)f->Get(Form("hMeas2D%i", ic));
     hTrue1D[ic] = (TH1D *)f->Get(Form("hTrue1D%i", ic));
     hMeas1D[ic] = (TH1D *)f->Get(Form("hMeas1D%i", ic));
-    hFake1D[ic] = (TH1D *)f->Get(Form("hFake1D%i", ic));
     response[ic] = (RooUnfoldResponse *)f->Get(Form("response%i", ic));
 
     // we want truth and measured info from the fake data but fakes & response matrix from the "MC" used for unfolding
@@ -74,21 +71,19 @@ void unfoldClosure(int nIterations = 1)
     hMeas2DHalf[ic] = (TH2D *)f->Get(Form("hMeas2DB%i", ic));
     hTrue1DHalf[ic] = (TH1D *)f->Get(Form("hTrue1DB%i", ic));
     hMeas1DHalf[ic] = (TH1D *)f->Get(Form("hMeas1DB%i", ic));
-    hFake1DHalf[ic] = (TH1D *)f->Get(Form("hFake1DA%i", ic));
     responseHalf[ic] = (RooUnfoldResponse *)f->Get(Form("responseA%i", ic));
 
     const int nBinsY = hTrue2D[ic]->GetNbinsY();
     const int nGlobalBins = hMeas1D[ic]->GetNbinsX();
 
-    // run unfold
-    hMeas1D[ic]->Add(hFake1D[ic], -1);
+    // run unfold; fakes are not subtracted here -- the response matrix carries them in an extra
+    // truth bin (index nGlobalBins+1), which the g <= nGlobalBins loop below drops
     unfold.emplace_back(response[ic], hMeas1D[ic], nIterations);
     unfold[ic].SetVerbose(1);
 
     hUnfolded1D[ic] = (TH1D *)unfold[ic].Hunfold(RooUnfold::kErrors);
     hUnfolded1D[ic]->SetName(Form("hUnfolded1D_cent%d", ic));
 
-    hMeas1DHalf[ic]->Add(hFake1DHalf[ic], -1);
     unfoldHalf.emplace_back(responseHalf[ic], hMeas1DHalf[ic], nIterations);
     unfoldHalf[ic].SetVerbose(1);
 

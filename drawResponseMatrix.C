@@ -62,7 +62,7 @@ void drawResponseMatrix()
 		TLegend *sphenixLeg = new TLegend(.15, .75, .45, .92);
 		sphenixLeg->SetFillStyle(0);
 		sphenixLeg->SetTextSize(0.032);
-		sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Work in Progress", "");
+		sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
 		sphenixLeg->AddEntry("", "Pythia8 + HIJING O+O #sqrt{s_{NN}} = 200 GeV", "");
 		sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
 		sphenixLeg->AddEntry("", Form("%s",cent_str[ic].c_str()), "");
@@ -98,7 +98,7 @@ void drawResponseMatrix()
 		TH1D *h_matchedtrue1D = (TH1D *)h_response->ProjectionY(Form("h_matchedtrue1D_cent%i", ic));
 		TH2D *h_matchedtrue2D = (TH2D *)h_true2D->Clone(Form("h_matchedtrue2D_cent%i", ic));
 		h_matchedtrue2D->Reset();
-		for (int g = 1; g <= h_matchedtrue1D->GetNbinsX(); g++)
+		for (int g = 1; g <= pt_N * pt_N; g++) // skip the extra fake truth bin
 		{
 			int ix = (g - 1) / pt_N + 1;
 			int iy = (g - 1) % pt_N + 1;

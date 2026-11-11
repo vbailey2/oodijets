@@ -31,7 +31,6 @@ void unfoldData(int nIterations = 2)
   TH2D *hUnfolded2D[cent_N];
   TH1D *hTrue1D[cent_N];
   TH1D *hMeas1D[cent_N];
-  TH1D *hFake1D[cent_N];
   TH1D *hUnfolded1D[cent_N];
 
   TH3F *hUnfolded3D = (TH3F *)h_pt1pt2->Clone();
@@ -54,14 +53,13 @@ void unfoldData(int nIterations = 2)
     hMeas2D[ic] = (TH2D *)fData->Get(Form("hMeas2D%i", ic));
     hTrue1D[ic] = (TH1D *)fMC->Get(Form("hTrue1D%i", ic));
     hMeas1D[ic] = (TH1D *)fData->Get(Form("hMeas1D%i", ic));
-    hFake1D[ic] = (TH1D *)fMC->Get(Form("hFake1D%i", ic));
     response[ic] = (RooUnfoldResponse *)fMC->Get(Form("response%i", ic));
 
     const int nBinsY = hTrue2D[ic]->GetNbinsY();
     const int nGlobalBins = hMeas1D[ic]->GetNbinsX();
 
-    // run unfold
-    hMeas1D[ic]->Add(hFake1D[ic], -1);
+    // run unfold; fakes are not subtracted here -- the response matrix carries them in an extra
+    // truth bin (index nGlobalBins+1), which the g <= nGlobalBins loop below drops
     unfold.emplace_back(response[ic], hMeas1D[ic], nIterations);
     unfold[ic].SetVerbose(1);
 

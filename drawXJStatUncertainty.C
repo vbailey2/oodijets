@@ -99,7 +99,7 @@ void drawXJStatUncertainty()
 			TLegend *sphenixLeg = new TLegend(.15, .84, .45, .92);
 			sphenixLeg->SetFillStyle(0);
 			sphenixLeg->SetTextSize(0.04);
-			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Work in Progress", "");
+			sphenixLeg->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
 			sphenixLeg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4", "");
 
 			gratio->Draw("AP");

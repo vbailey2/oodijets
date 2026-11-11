@@ -244,6 +244,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	responseB.reserve(nCentBins);
 
 	int nGlobalBins = pt_N * pt_N;
+	// extra truth-axis bin that absorbs fakes (reco dijets with no matching truth dijet), since
+	// RooUnfoldResponse::Fake() doesn't work in our RooUnfold version; dropped after unfolding
+	int fakeBin = nGlobalBins + 1;
 
 	// raw (unweighted) MC counts per (gReco, gTrue) migration cell and per sample (sample = 0-8)
 	TH3D *h_sample_counts = new TH3D("h_sample_counts", "", nGlobalBins, 0.5, nGlobalBins + 0.5, nGlobalBins, 0.5, nGlobalBins + 0.5, 9, -0.5, 8.5);
@@ -259,9 +262,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		hTrue2DB[i] = new TH2D(Form("hTrue2DB%i", i), "Truth;x;y", pt_N, pt_bins, pt_N, pt_bins);
 		hMeas2DB[i] = new TH2D(Form("hMeas2DB%i", i), "Measured;x;y", pt_N, pt_bins, pt_N, pt_bins);
 
-		hTrue1D[i] = new TH1D(Form("hTrue1D%i", i), "Truth (flattened);global bin", nGlobalBins, 0.5, nGlobalBins + 0.5);
-		hTrue1DA[i] = new TH1D(Form("hTrue1DA%i", i), "Truth (flattened);global bin", nGlobalBins, 0.5, nGlobalBins + 0.5);
-		hTrue1DB[i] = new TH1D(Form("hTrue1DB%i", i), "Truth (flattened);global bin", nGlobalBins, 0.5, nGlobalBins + 0.5);
+		hTrue1D[i] = new TH1D(Form("hTrue1D%i", i), "Truth (flattened, last bin = fakes);global bin", nGlobalBins + 1, 0.5, nGlobalBins + 1.5);
+		hTrue1DA[i] = new TH1D(Form("hTrue1DA%i", i), "Truth (flattened, last bin = fakes);global bin", nGlobalBins + 1, 0.5, nGlobalBins + 1.5);
+		hTrue1DB[i] = new TH1D(Form("hTrue1DB%i", i), "Truth (flattened, last bin = fakes);global bin", nGlobalBins + 1, 0.5, nGlobalBins + 1.5);
 
 		hMeas1D[i] = new TH1D(Form("hMeas1D%i", i), "Measured (flattened);global bin", nGlobalBins, 0.5, nGlobalBins + 0.5);
 		hMeas1DA[i] = new TH1D(Form("hMeas1DA%i", i), "Measured (flattened);global bin", nGlobalBins, 0.5, nGlobalBins + 0.5);
@@ -651,9 +654,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5);
 					hMeas1D[centbin]->Fill(gReco, weight * 0.5);
 					hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-					// this just doesn't work in our version of roounfold >:(
-					// response[centbin].Fake(gReco,weight*0.5);
-					// response[centbin].Fake(gRecosym,weight*0.5);
+					response[centbin].Fill(gReco, fakeBin, weight * 0.5);
+					response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+					hTrue1D[centbin]->Fill(fakeBin, weight);
 					hFake1D[centbin]->Fill(gReco, weight * 0.5);
 					hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
 
@@ -668,8 +671,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 						hMeas2DA[centbin]->Fill(subpt, leadpt, weight * 0.5);
 						hMeas1DA[centbin]->Fill(gReco, weight * 0.5);
 						hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
-						// responseA[centbin].Fake(gReco,weight*0.5);
-						// responseA[centbin].Fake(gRecosym,weight*0.5);
+						responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
+						responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+						hTrue1DA[centbin]->Fill(fakeBin, weight);
 						hFake1DA[centbin]->Fill(gReco, weight * 0.5);
 						hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
 					}
@@ -679,8 +683,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 						hMeas2DB[centbin]->Fill(subpt, leadpt, weight * 0.5);
 						hMeas1DB[centbin]->Fill(gReco, weight * 0.5);
 						hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
-						// responseB[centbin].Fake(gReco,weight*0.5);
-						// responseB[centbin].Fake(gRecosym,weight*0.5);
+						responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
+						responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+						hTrue1DB[centbin]->Fill(fakeBin, weight);
 						hFake1DB[centbin]->Fill(gReco, weight * 0.5);
 						hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
 					}
@@ -692,8 +697,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 				hMeas2D[centbin]->Fill(subpt, leadpt, weight * 0.5);
 				hMeas1D[centbin]->Fill(gReco, weight * 0.5);
 				hMeas1D[centbin]->Fill(gRecosym, weight * 0.5);
-				// response[centbin].Fake(gReco,weight*0.5);
-				// response[centbin].Fake(gRecosym,weight*0.5);
+				response[centbin].Fill(gReco, fakeBin, weight * 0.5);
+				response[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+				hTrue1D[centbin]->Fill(fakeBin, weight);
 				hFake1D[centbin]->Fill(gReco, weight * 0.5);
 				hFake1D[centbin]->Fill(gRecosym, weight * 0.5);
 				h_pt1pt2fake->Fill(leadpt, subpt, centbin, weight * 0.5);
@@ -708,8 +714,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hMeas1DA[centbin]->Fill(gRecosym, weight * 0.5);
 					hFake1DA[centbin]->Fill(gReco, weight * 0.5);
 					hFake1DA[centbin]->Fill(gRecosym, weight * 0.5);
-					// responseA[centbin].Fake(gReco,weight*0.5);
-					// responseA[centbin].Fake(gRecosym,weight*0.5);
+					responseA[centbin].Fill(gReco, fakeBin, weight * 0.5);
+					responseA[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+					hTrue1DA[centbin]->Fill(fakeBin, weight);
 				}
 				else
 				{
@@ -719,8 +726,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 					hMeas1DB[centbin]->Fill(gRecosym, weight * 0.5);
 					hFake1DB[centbin]->Fill(gReco, weight * 0.5);
 					hFake1DB[centbin]->Fill(gRecosym, weight * 0.5);
-					// responseB[centbin].Fake(gReco,weight*0.5);
-					// responseB[centbin].Fake(gRecosym,weight*0.5);
+					responseB[centbin].Fill(gReco, fakeBin, weight * 0.5);
+					responseB[centbin].Fill(gRecosym, fakeBin, weight * 0.5);
+					hTrue1DB[centbin]->Fill(fakeBin, weight);
 				}
 			}
 		}

@@ -34,7 +34,7 @@ void drawunfoldclosure(bool ishalf = 1)
 
   TLegend *leg = new TLegend(.15, .7, .4, .92);
   leg->SetFillStyle(0);
-  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Work in Progress", "");
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Simulation Internal", "");
   leg->AddEntry("", "Pythia8 + HIJING", "");
   leg->AddEntry("", "O+O #sqrt{s_{NN}} = 200 GeV", "");
   leg->AddEntry("", "anti-#it{k}_{#it{t}} #it{R} = 0.4, |#eta| < 0.7", "");
