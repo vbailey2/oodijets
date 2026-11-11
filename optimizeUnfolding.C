@@ -20,7 +20,8 @@ void optimizeUnfolding()
   }
 
   // 1. quadrature sum of per-bin statistical error, and 2. quadrature sum of the bin-by-bin
-  // difference from the previous iteration, both per iteration and centrality
+  // difference from the previous iteration, both per iteration and centrality, computed on
+  // xj distributions normalized per pT1 slice
   double statErrSum[nIter][ncent];
   double diffQuadSum[nIter][ncent];
 
@@ -29,10 +30,27 @@ void optimizeUnfolding()
   {
     for (int ic = 0; ic < ncent; ic++)
     {
-      h_xj[i][ic] = (TH2F *)f[i]->Get(Form("h_xj_%d", ic));
+      h_xj[i][ic] = (TH2F *)((TH2F *)f[i]->Get(Form("h_xj_%d", ic)))->Clone(Form("h_xj_norm_iter%d_cent%d", nIterMin + i, ic));
 
       int nx = h_xj[i][ic]->GetNbinsX();
       int ny = h_xj[i][ic]->GetNbinsY();
+
+      // normalize each pT1 slice to a unit-integral xj density (same as the drawn xj distributions),
+      // so shape changes in sparse low-xj bins aren't swamped by the overall yield of the big bins
+      for (int iy = 1; iy <= ny; iy++)
+      {
+        double integral = 0;
+        for (int ix = 1; ix <= nx; ix++)
+          integral += h_xj[i][ic]->GetBinContent(ix, iy);
+        if (integral <= 0)
+          continue;
+        for (int ix = 1; ix <= nx; ix++)
+        {
+          double norm = integral * h_xj[i][ic]->GetXaxis()->GetBinWidth(ix);
+          h_xj[i][ic]->SetBinContent(ix, iy, h_xj[i][ic]->GetBinContent(ix, iy) / norm);
+          h_xj[i][ic]->SetBinError(ix, iy, h_xj[i][ic]->GetBinError(ix, iy) / norm);
+        }
+      }
 
       double errsum = 0;
       for (int ix = 1; ix <= nx; ix++)
