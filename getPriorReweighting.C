@@ -17,9 +17,16 @@
 // Cells with no unfolded or truth entries take the weight of the nearest filled cell in the same
 // leading-pT row, walking from the diagonal (xJ = 1) down to low pT2 (as in the reference); cells
 // still without a weight are set to 1.
+//
+// Weights are only derived inside the reco acceptance (leading truth bin >= minLeadBin, subleading truth
+// bin >= minSubBin; defaults = reco tier pt_bins[9], pt_bins[3] -> 1-based bins 10, 4). Truth cells below
+// the reco cuts are reached only through migrations, so the unfold there is barely constrained and the
+// primer ratio is noise (e.g. it hit the wmax clamp at pT2 ~ 6 GeV, which then ran away with iterations).
+// Those cells keep weight 1 and are excluded from the row normalizations.
 void getPriorReweighting(const char *unfoldfile = "hists/hist-unfoldedData_primer.root",
 						 const char *outfile = "hists/prior_reweight.root",
-						 bool perLeadingBin = true, double wmin = 0.1, double wmax = 5.)
+						 bool perLeadingBin = true, double wmin = 0.1, double wmax = 5.,
+						 int minLeadBin = 10, int minSubBin = 4)
 {
 	TFile *f = TFile::Open(unfoldfile, "READ");
 	if (!f || f->IsZombie())
@@ -52,6 +59,8 @@ void getPriorReweighting(const char *unfoldfile = "hists/hist-unfoldedData_prime
 			for (int j = 1; j <= n; j++)
 			{
 				int k = std::max(i, j);
+				if (k < minLeadBin || std::min(i, j) < minSubBin)
+					continue;
 				double u = hU->GetBinContent(i, j), t = hT->GetBinContent(i, j);
 				if (u > 0)
 				{
@@ -69,6 +78,8 @@ void getPriorReweighting(const char *unfoldfile = "hists/hist-unfoldedData_prime
 			for (int j = 1; j <= n; j++)
 			{
 				int k = std::max(i, j);
+				if (k < minLeadBin || std::min(i, j) < minSubBin)
+					continue;
 				double nu = perLeadingBin ? sumU[k] : totU;
 				double nt = perLeadingBin ? sumT[k] : totT;
 				double u = hU->GetBinContent(i, j), t = hT->GetBinContent(i, j);
@@ -85,6 +96,12 @@ void getPriorReweighting(const char *unfoldfile = "hists/hist-unfoldedData_prime
 			double last = 0;
 			for (int j = k; j >= 1; j--)
 			{
+				if (k < minLeadBin || j < minSubBin)
+				{
+					h->SetBinContent(k, j, 1.);
+					h->SetBinContent(j, k, 1.);
+					continue;
+				}
 				double w = h->GetBinContent(k, j);
 				if (w <= 0)
 					w = h->GetBinContent(j, k);

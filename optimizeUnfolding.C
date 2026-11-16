@@ -1,10 +1,11 @@
 #include "sPhenixStyle.h"
 #include "sPhenixStyle.C"
 
-void optimizeUnfolding()
+// nIterMax: highest iteration count to read -- must match what rununfolddata.sh actually produced, otherwise
+// stale projections_unfold_iter*.root files from an older response get mixed in
+void optimizeUnfolding(const int nIterMax = 8)
 {
   const int nIterMin = 1;
-  const int nIterMax = 8;
   const int nIter = nIterMax - nIterMin + 1;
 
   // final xj-observable space (matches the pp reference's convergence check),
@@ -12,7 +13,7 @@ void optimizeUnfolding()
   // projections produced by projectDijets.C via rununfolddata.sh
   const int ncent = 4;
 
-  TFile *f[nIter];
+  std::vector<TFile *> f(nIter);
   for (int i = 0; i < nIter; i++)
   {
     int iter = nIterMin + i;
@@ -22,10 +23,9 @@ void optimizeUnfolding()
   // 1. quadrature sum of per-bin statistical error, and 2. quadrature sum of the bin-by-bin
   // difference from the previous iteration, both per iteration and centrality, computed on
   // xj distributions normalized per pT1 slice
-  double statErrSum[nIter][ncent];
-  double diffQuadSum[nIter][ncent];
+  std::vector<std::array<double, ncent>> statErrSum(nIter), diffQuadSum(nIter);
 
-  TH2F *h_xj[nIter][ncent];
+  std::vector<std::array<TH2F *, ncent>> h_xj(nIter);
   for (int i = 0; i < nIter; i++)
   {
     for (int ic = 0; ic < ncent; ic++)
