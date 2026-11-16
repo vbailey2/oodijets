@@ -10,5 +10,6 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 
 inname="/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root"
-outname="/sphenix/user/vbailey/ooanalysis/hists/histMC_reweight.root"
+outname="/sphenix/user/vbailey/ooanalysis/hists/histMC_reweight_primer.root"
+# primer pass: totalcalo_et/vz reweighting + gating, no prior reweighting
 root -b -q /sphenix/user/vbailey/ooanalysis/getDijets.C\(\"$inname\",\"$outname\",1,1,5\)

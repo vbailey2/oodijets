@@ -13,13 +13,15 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
   iy = g % nBinsY + 1;
 }
 
-void unfoldClosure(int nIterations = 1)
+// mcfile: defaults to the fully reweighted MC (totalcalo_et/vz + gating + pT1-pT2 prior, from runmcrwprior.sh);
+// pass "hists/histMC_reweight_primer.root" to check the closure without the prior reweighting
+void unfoldClosure(int nIterations = 1, const char *mcfile = "hists/histMC_reweight.root")
 {
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();
   TH3::SetDefaultSumw2();
 
-  TFile *f = new TFile("hists/histMC_reweight.root", "READ");
+  TFile *f = new TFile(mcfile, "READ");
   TH3F *h_xj_bins = (TH3F *)f->Get("h_xj");
   TH3F *h_pt1pt2 = (TH3F *)f->Get("h_pt1pt2");
   int cent_N = h_pt1pt2->GetNbinsZ();

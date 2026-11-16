@@ -15,13 +15,14 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
 
 // nToys: number of response-matrix toy unfolds for the response-matrix statistical uncertainty
 // (added in quadrature to the data statistical uncertainty); nToys <= 1 disables it
-void unfoldData(int nIterations = 2, int nToys = 1000)
+// mcfile: MC with the response matrix to unfold with; outfile: defaults to hists/hist-unfoldedData_iter<N>.root
+void unfoldData(int nIterations = 2, int nToys = 1000, const char *mcfile = "hists/histMC_reweight.root", const char *outfile = "")
 {
   TH1::SetDefaultSumw2();
   TH2::SetDefaultSumw2();
   TH3::SetDefaultSumw2();
 
-  TFile *fMC = new TFile("hists/histMC_reweight.root", "READ");
+  TFile *fMC = new TFile(mcfile, "READ");
   TFile *fData = new TFile("hists/hist-full.root", "READ");
   TH3F *h_xj_bins = (TH3F *)fMC->Get("h_xj");
   TH3F *h_pt1pt2 = (TH3F *)fMC->Get("h_pt1pt2");
@@ -141,7 +142,11 @@ void unfoldData(int nIterations = 2, int nToys = 1000)
         RooUnfoldResponse respToy(hMeasToy, hTrueToy, hRespToy, Form("respToy_cent%d", ic), "");
         RooUnfoldBayes unfoldToy(&respToy, hMeas1D[ic], nIterations);
         unfoldToy.SetVerbose(0);
+        // RooUnfoldBayes prints "Using response matrix priors" on every unfold regardless of
+        // verbosity; silence stdout for the toys so the log isn't flooded
+        gSystem->RedirectOutput("/dev/null", "a");
         TH1D *hToy = (TH1D *)unfoldToy.Hunfold(RooUnfold::kNoError);
+        gSystem->RedirectOutput(0);
         for (int g = 1; g <= nUnf; g++)
         {
           double v = hToy->GetBinContent(g);
@@ -156,6 +161,7 @@ void unfoldData(int nIterations = 2, int nToys = 1000)
         delete hTrueToy;
       }
 
+      std::cout << "cent " << ic << ": " << nToys << " response-matrix toy unfolds done" << std::endl;
       for (int g = 1; g <= nUnf; g++)
       {
         double mean = sum[g] / nToys;
@@ -206,7 +212,7 @@ void unfoldData(int nIterations = 2, int nToys = 1000)
   }
   hUnfolded3D->SetName("h_pt1pt2");
 
-  TFile *fout = new TFile(Form("hists/hist-unfoldedData_iter%d.root", nIterations), "RECREATE");
+  TFile *fout = new TFile(strlen(outfile) ? TString(outfile) : TString::Format("hists/hist-unfoldedData_iter%d.root", nIterations), "RECREATE");
   h_xj_bins->Write();
   hUnfolded3D->Write();
   for (int ic = 0; ic < cent_N; ic++)

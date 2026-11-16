@@ -28,8 +28,10 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
 	iy = g % nBinsY + 1;
 }
 
-void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usetotalcaloreweight = false, int sample_count_threshold = 0)
+void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usetotalcaloreweight = false, int sample_count_threshold = 0, bool useprior = false)
 {
+	// useprior: also reweight the MC by a per-centrality truth (pT1, pT2) weight from hists/prior_reweight.root
+	// (getPriorReweighting.C), so the MC truth prior matches the unfolded data; see README for the pass order
 	TH1::SetDefaultSumw2();
 	TH2::SetDefaultSumw2();
 	TH3::SetDefaultSumw2();
@@ -60,6 +62,32 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		}
 		h_vz_ratio->SetDirectory(nullptr);
 		frw->Close();
+	}
+
+	// truth (pT1, pT2) prior weights, one TH2D per centrality class
+	std::vector<TH2D *> h_prior_reweight;
+	if (ismc && useprior)
+	{
+		TFile *fprior = TFile::Open("hists/prior_reweight.root", "READ");
+		if (!fprior || fprior->IsZombie())
+		{
+			std::cerr << "ERROR: cannot open hists/prior_reweight.root for the pT1-pT2 prior reweighting" << std::endl;
+			std::exit(1);
+		}
+		for (int ic = 0;; ic++)
+		{
+			TH2D *h = (TH2D *)fprior->Get(Form("h_prior_reweight_cent%d", ic));
+			if (!h)
+				break;
+			h->SetDirectory(nullptr);
+			h_prior_reweight.push_back(h);
+		}
+		fprior->Close();
+		if (h_prior_reweight.empty())
+		{
+			std::cerr << "ERROR: no h_prior_reweight_cent%d histograms in hists/prior_reweight.root" << std::endl;
+			std::exit(1);
+		}
 	}
 
 	// per-(gReco, gTrue, sample) raw MC statistics from the first pass, used to gate response.Fill() on the second pass
@@ -216,6 +244,8 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	TH1D *h_mbd_charge_sum = new TH1D("h_mbd_charge_sum", "", 200, 0, 200);
 	TH1D *h_totalcalo_et = new TH1D("h_totalcalo_et", "", 300, 0, 3000);
 	TH1D *h_vz = new TH1D("h_vz", "", 120, -60, 60);
+	TH1D *h_totalcalo_et_rw = new TH1D("h_totalcalo_et_rw", "after totalcalo_et/vz reweighting", 300, 0, 3000);
+	TH1D *h_vz_rw = new TH1D("h_vz_rw", "after totalcalo_et/vz reweighting", 120, -60, 60);
 
 	// only filled in MC
 	TH2D *hTrue2D[cent_N];
@@ -300,18 +330,65 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			njets = njetsdata;
 
 		h_counting[centbin]->Fill(1);
-		h_centrality->Fill(centbin);
-		h_mbd_charge_sum->Fill(mbdcharge);
-		h_totalcalo_et->Fill(totalcalo_et);
-		h_vz->Fill(vz);
 
 		// apply the truth sumET smearing weight, and the data/MC totalcalo_et and vz reweighting, on top of the existing MC weight
 		if (ismc)
 			weight *= GetTruthSumETSmearWeight(truth_sumet);
+
+		// event-level distributions used by getCentralityReweighting.C to derive the data/MC ratios.
+		// Filled with the MC weight *before* the totalcalo_et/vz ratios (tree weight x sumET weight), so the
+		// first-pass ratios correct exactly the weighted MC they are later multiplied onto
+		h_centrality->Fill(centbin, weight);
+		h_mbd_charge_sum->Fill(mbdcharge, weight);
+		h_totalcalo_et->Fill(totalcalo_et, weight);
+		h_vz->Fill(vz, weight);
+
 		if (ismc && usetotalcaloreweight)
 		{
 			weight *= h_totalcalo_et_ratio->GetBinContent(h_totalcalo_et_ratio->FindBin(totalcalo_et));
 			weight *= h_vz_ratio->GetBinContent(h_vz_ratio->FindBin(vz));
+		}
+
+		// same distributions after the full reweighting (closure check of the totalcalo_et/vz reweighting
+		// against data on the second pass; identical to the above for data and for the first MC pass)
+		h_totalcalo_et_rw->Fill(totalcalo_et, weight);
+		h_vz_rw->Fill(vz, weight);
+
+		// truth (pT1, pT2) prior reweighting: the event weight is multiplied by the weight of its truth dijet
+		// cell (same leading/subleading truth jets and truth dijet cuts as the matching below), applied here
+		// at event level so the reco, truth, response, miss and fake fills of this event all carry it.
+		// Events with no truth dijet keep weight 1 from this step.
+		if (ismc && useprior && ntruthjets >= 2)
+		{
+			float pt1 = 0, phi1 = 0, eta1 = 0, pt2 = 0, phi2 = 0, eta2 = 0;
+			for (int j = 0; j < ntruthjets; j++)
+			{
+				if (truthpt[j] > pt1)
+				{
+					pt2 = pt1; phi2 = phi1; eta2 = eta1;
+					pt1 = truthpt[j]; phi1 = truthphi[j]; eta1 = trutheta[j];
+				}
+				else if (truthpt[j] > pt2)
+				{
+					pt2 = truthpt[j]; phi2 = truthphi[j]; eta2 = trutheta[j];
+				}
+			}
+			float dPhiPrior = phi1 - phi2;
+			while (dPhiPrior > TMath::Pi())
+				dPhiPrior -= 2 * TMath::Pi();
+			while (dPhiPrior < -TMath::Pi())
+				dPhiPrior += 2 * TMath::Pi();
+			if (pt2 >= truth_subpt_min && pt1 >= truth_leadpt_min && fabs(eta1) < 0.7 && fabs(eta2) < 0.7 &&
+				fabs(dPhiPrior) > 3 * TMath::Pi() / 4 && centbin < (int)h_prior_reweight.size())
+			{
+				TH2D *hp = h_prior_reweight[centbin];
+				// clamp to the histogram range so jets above the top pT edge use the last bin, not the overflow
+				int ixp = std::min(std::max(hp->GetXaxis()->FindBin(pt1), 1), hp->GetNbinsX());
+				int iyp = std::min(std::max(hp->GetYaxis()->FindBin(pt2), 1), hp->GetNbinsY());
+				double wp = hp->GetBinContent(ixp, iyp);
+				if (wp > 0)
+					weight *= wp;
+			}
 		}
 
 		// loop through jets to get lead & sublead
@@ -674,6 +751,8 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	h_mbd_charge_sum->Write();
 	h_totalcalo_et->Write();
 	h_vz->Write();
+	h_totalcalo_et_rw->Write();
+	h_vz_rw->Write();
 	h_sample_counts->Write();
 
 	for (int i = 0; i < cent_N; i++)

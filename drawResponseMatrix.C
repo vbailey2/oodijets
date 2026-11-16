@@ -1,14 +1,15 @@
 #include "sPhenixStyle.h"
 #include "sPhenixStyle.C"
 
-void drawResponseMatrix()
+// mcfile: defaults to the fully reweighted MC (totalcalo_et/vz + gating + pT1-pT2 prior, from runmcrwprior.sh)
+void drawResponseMatrix(const char *mcfile = "hists/histMC_reweight.root")
 {
 	SetsPhenixStyle();
 	TH1::SetDefaultSumw2();
 	TH2::SetDefaultSumw2();
 	TH3::SetDefaultSumw2();
 
-	TFile *f = new TFile("hists/histMC_reweight.root", "READ");
+	TFile *f = new TFile(mcfile, "READ");
 
 	// the data/MC weights applied on top of the MC to produce this reweighted response matrix
 	TFile *frw = new TFile("hists/centrality_mbd_reweight.root", "READ");
