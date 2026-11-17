@@ -28,8 +28,13 @@ void InverseGlobalBin(int globalBin, int nBinsY, int &ix, int &iy)
 	iy = g % nBinsY + 1;
 }
 
-void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usetotalcaloreweight = false, int sample_count_threshold = 0, bool useprior = false)
+void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/SkimmedTrees/outree_skimjet_MC_inclusive_merged.root", string outfile = "output.root", bool ismc = true, bool usetotalcaloreweight = false, int sample_count_threshold = 0, bool useprior = false, double min_column_entries = 50)
 {
+	// min_column_entries: on the gated passes, a truth (pT1, pT2) cell is only unfolded if its whole response
+	// column has at least this many raw first-pass MC entries in migration cells that pass the per-cell gating.
+	// Matched entries from a truth cell below that are treated as fakes (truth outside the unfolding phase
+	// space) and its misses are dropped: a column built from a handful of MC events has a tiny, noisy
+	// efficiency and the Bayesian iterations run away in it (e.g. pT1 18-21, pT2 6.3-7.2 GeV: 14 entries).
 	// useprior: also reweight the MC by a per-centrality truth (pT1, pT2) weight from hists/prior_reweight.root
 	// (getPriorReweighting.C), so the MC truth prior matches the unfolded data; see README for the pass order
 	TH1::SetDefaultSumw2();
@@ -108,6 +113,27 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		}
 		h_sample_counts_prev->SetDirectory(nullptr);
 		fprev->Close();
+	}
+
+	// per truth cell: gated raw first-pass MC entries summed over its whole response column (all reco cells, samples)
+	std::vector<double> colGatedCounts;
+	if (h_sample_counts_prev)
+	{
+		int nx = h_sample_counts_prev->GetNbinsX(), ny = h_sample_counts_prev->GetNbinsY(), nz = h_sample_counts_prev->GetNbinsZ();
+		colGatedCounts.assign(ny + 2, 0.);
+		for (int iy = 1; iy <= ny; iy++)
+			for (int ix = 1; ix <= nx; ix++)
+				for (int iz = 1; iz <= nz; iz++)
+				{
+					double c = h_sample_counts_prev->GetBinContent(ix, iy, iz);
+					if (c > sample_count_threshold)
+						colGatedCounts[iy] += c;
+				}
+		int nDropped = 0;
+		for (int iy = 1; iy < ny; iy++) // last bin is the fake bin, never dropped
+			if (colGatedCounts[iy] > 0 && colGatedCounts[iy] < min_column_entries)
+				nDropped++;
+		std::cout << "truth columns with 0 < gated MC entries < " << min_column_entries << " (treated as outside phase space): " << nDropped << std::endl;
 	}
 
 	TFile *f = new TFile(infile.c_str());
@@ -309,7 +335,7 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 		responseA.emplace_back(hMeas1DA[i], hTrue1DA[i], Form("responseA%i", i), "2D response (flattened)");
 		responseB.emplace_back(hMeas1DB[i], hTrue1DB[i], Form("responseB%i", i), "2D response (flattened)");
 
-		h_counting[i] = new TH1D(Form("h_counting%i", i), "", 7, 0.5, 7.5); // total events, pass cent, reco dijet, truth dijet, match dijet, unmatch reco, unmatch truth
+		h_counting[i] = new TH1D(Form("h_counting%i", i), "", 8, 0.5, 8.5); // total events, pass cent, reco dijet, truth dijet, match dijet, unmatch reco, unmatch truth, matched but truth column dropped
 	}
 
 	int nentries = t->GetEntries();
@@ -597,6 +623,15 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 						   h_sample_counts_prev->GetZaxis()->FindBin(sample)) > sample_count_threshold;
 			};
 
+			// truth cell is inside the unfolding phase space only if its response column has enough gated MC.
+			// The column counts are symmetric under (pT1, pT2) swap, so gTrue and gTruesym give the same answer.
+			auto trustedColumn = [&](int gtrue) -> bool
+			{
+				return colGatedCounts.empty() ||
+					   colGatedCounts[h_sample_counts_prev->GetYaxis()->FindBin(gtrue)] >= min_column_entries;
+			};
+			bool truthInPhaseSpace = truthdijet && trustedColumn(gTrue);
+
 			// fakes migrate from their reco cell into the extra fake truth bin; the response and the
 			// closure measured/truth histograms are gated per cell like matched entries, while
 			// hFake1D/h_pt1pt2fake keep all fakes for diagnostics
@@ -647,7 +682,13 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			};
 
 			// std::cout<<"is reco "<<recodijet<<" is truth "<<truthdijet<<" Match? "<<ismatch<<std::endl;
-			if (ismatch)
+			if (ismatch && !truthInPhaseSpace)
+			{
+				// matched, but the truth cell is outside the unfolding phase space: the reco dijet is a fake
+				fillFake();
+				h_counting[centbin]->Fill(7);
+			}
+			else if (ismatch)
 			{
 				// the event fills two (reco, truth) migration cells: (lead,sub) reco with its matched truth
 				// ordering, and the symmetrized (sub,lead) reco with the opposite. If swapmatch, the reco
@@ -699,6 +740,14 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 				}
 			}
 
+			else if (truthdijet && !truthInPhaseSpace) // unmatched truth outside the unfolding phase space: no miss
+			{
+				if (recodijet)
+				{
+					fillFake();
+					h_counting[centbin]->Fill(5);
+				}
+			}
 			else if (truthdijet) // umatched truth dijet is miss
 			{
 				hTrue2D[centbin]->Fill(leadpttrue, subpttrue, weight * 0.5);
