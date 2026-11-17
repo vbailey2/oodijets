@@ -235,8 +235,9 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	// three-tier pt phase space (truth -> reco -> measure), aligned to bin edges
 	const float truth_leadpt_min = pt_bins[6];	  // ~12.2507
 	const float truth_subpt_min = pt_bins[0];	  // ~5.5
-	const float reco_leadpt_min = pt_bins[9];	  // ~18.2836
-	const float reco_subpt_min = pt_bins[3];	  // ~8.20847
+	// reco tier no longer used for the selection (MC reco uses the measure tier, like data -- see the jet cuts)
+	// const float reco_leadpt_min = pt_bins[9];	  // ~18.2836
+	// const float reco_subpt_min = pt_bins[3];	  // ~8.20847
 	const float measure_leadpt_min = pt_bins[10]; // ~20.8943
 	const float measure_subpt_min = pt_bins[4];	  // ~9.38056
 
@@ -458,9 +459,13 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 			if (!(!ismc && (fabs(leadtime) > 6 || fabs(leadtime - subtime) > 3)))
 			{
 
-				// jet pt and eta cuts: measure tier on real data, reco tier on the MC reconstructed simulation
-				float this_leadpt_min = ismc ? reco_leadpt_min : measure_leadpt_min;
-				float this_subpt_min = ismc ? reco_subpt_min : measure_subpt_min;
+				// jet pt and eta cuts: the measure tier (set by the trigger turn-on) on both data and the MC
+				// reconstructed simulation. The response's reco axis must match the data selection: with a looser
+				// MC reco cut, the reco cells only MC can populate are measured zeros in data, and the Bayesian
+				// iterations push down the truth that migrates into them (non-converging xJ shapes). MC reco
+				// dijets below the measure cuts are therefore misses.
+				float this_leadpt_min = measure_leadpt_min;
+				float this_subpt_min = measure_subpt_min;
 				if (leadpt >= this_leadpt_min && subpt >= this_subpt_min && fabs(leadeta) < 0.7 && fabs(subeta) < 0.7)
 				{
 

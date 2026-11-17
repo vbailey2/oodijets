@@ -19,14 +19,15 @@
 // still without a weight are set to 1.
 //
 // Weights are only derived inside the reco acceptance (leading truth bin >= minLeadBin, subleading truth
-// bin >= minSubBin; defaults = reco tier pt_bins[9], pt_bins[3] -> 1-based bins 10, 4). Truth cells below
+// bin >= minSubBin; defaults = measure tier pt_bins[10], pt_bins[4] -> 1-based bins 11, 5, which is now the
+// reco selection for both data and MC in getDijets.C). Truth cells below
 // the reco cuts are reached only through migrations, so the unfold there is barely constrained and the
 // primer ratio is noise (e.g. it hit the wmax clamp at pT2 ~ 6 GeV, which then ran away with iterations).
 // Those cells keep weight 1 and are excluded from the row normalizations.
 void getPriorReweighting(const char *unfoldfile = "hists/hist-unfoldedData_primer.root",
 						 const char *outfile = "hists/prior_reweight.root",
 						 bool perLeadingBin = true, double wmin = 0.1, double wmax = 5.,
-						 int minLeadBin = 10, int minSubBin = 4)
+						 int minLeadBin = 11, int minSubBin = 5)
 {
 	TFile *f = TFile::Open(unfoldfile, "READ");
 	if (!f || f->IsZombie())
