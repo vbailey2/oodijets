@@ -41,24 +41,19 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	TH2::SetDefaultSumw2();
 	TH3::SetDefaultSumw2();
 
-	TH1D *h_totalcalo_et_ratio = nullptr;
+	// MC event weight = tree weight x GetTruthSumETSmearWeight(truth sumET) [x data/MC vz ratio if
+	// usetotalcaloreweight] [x truth pT1-pT2 prior if useprior]. usetotalcaloreweight also switches on the
+	// second-pass low-statistics gating. The totalcalo_et ratio is no longer applied (the sumET smear weight
+	// handles the underlying event).
 	TH1D *h_vz_ratio = nullptr;
 	if (ismc && usetotalcaloreweight)
 	{
 		TFile *frw = TFile::Open("hists/centrality_mbd_reweight.root", "READ");
 		if (!frw || frw->IsZombie())
 		{
-			std::cerr << "ERROR: cannot open hists/centrality_mbd_reweight.root for totalcalo_et/vz reweighting" << std::endl;
+			std::cerr << "ERROR: cannot open hists/centrality_mbd_reweight.root for vz reweighting" << std::endl;
 			std::exit(1);
 		}
-		h_totalcalo_et_ratio = (TH1D *)frw->Get("h_totalcalo_et_ratio");
-		if (!h_totalcalo_et_ratio)
-		{
-			std::cerr << "ERROR: missing h_totalcalo_et_ratio in hists/centrality_mbd_reweight.root" << std::endl;
-			std::exit(1);
-		}
-		h_totalcalo_et_ratio->SetDirectory(nullptr);
-
 		h_vz_ratio = (TH1D *)frw->Get("h_vz_ratio");
 		if (!h_vz_ratio)
 		{
@@ -271,8 +266,6 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	TH1D *h_mbd_charge_sum = new TH1D("h_mbd_charge_sum", "", 200, 0, 200);
 	TH1D *h_totalcalo_et = new TH1D("h_totalcalo_et", "", 300, 0, 3000);
 	TH1D *h_vz = new TH1D("h_vz", "", 120, -60, 60);
-	TH1D *h_totalcalo_et_rw = new TH1D("h_totalcalo_et_rw", "after totalcalo_et/vz reweighting", 300, 0, 3000);
-	TH1D *h_vz_rw = new TH1D("h_vz_rw", "after totalcalo_et/vz reweighting", 120, -60, 60);
 
 	// only filled in MC
 	TH2D *hTrue2D[cent_N];
@@ -358,28 +351,19 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 
 		h_counting[centbin]->Fill(1);
 
-		// apply the truth sumET smearing weight, and the data/MC totalcalo_et and vz reweighting, on top of the existing MC weight
+		// apply the truth sumET smearing weight on top of the existing MC weight
 		if (ismc)
 			weight *= GetTruthSumETSmearWeight(truth_sumet);
 
-		// event-level distributions used by getCentralityReweighting.C to derive the data/MC ratios.
-		// Filled with the MC weight *before* the totalcalo_et/vz ratios (tree weight x sumET weight), so the
-		// first-pass ratios correct exactly the weighted MC they are later multiplied onto
+		// event-level distributions for getCentralityReweighting.C (MC: tree x sumET weight, before the vz ratio,
+		// so the first-pass vz ratio corrects exactly the weighted MC it is later multiplied onto)
 		h_centrality->Fill(centbin, weight);
 		h_mbd_charge_sum->Fill(mbdcharge, weight);
 		h_totalcalo_et->Fill(totalcalo_et, weight);
 		h_vz->Fill(vz, weight);
 
 		if (ismc && usetotalcaloreweight)
-		{
-			weight *= h_totalcalo_et_ratio->GetBinContent(h_totalcalo_et_ratio->FindBin(totalcalo_et));
 			weight *= h_vz_ratio->GetBinContent(h_vz_ratio->FindBin(vz));
-		}
-
-		// same distributions after the full reweighting (closure check of the totalcalo_et/vz reweighting
-		// against data on the second pass; identical to the above for data and for the first MC pass)
-		h_totalcalo_et_rw->Fill(totalcalo_et, weight);
-		h_vz_rw->Fill(vz, weight);
 
 		// truth (pT1, pT2) prior reweighting: the event weight is multiplied by the weight of its truth dijet
 		// cell (same leading/subleading truth jets and truth dijet cuts as the matching below), applied here
@@ -805,8 +789,6 @@ void getDijets(string infile = "/sphenix/tg/tg01/jets/jpark4/Run25OO/TTrees/Skim
 	h_mbd_charge_sum->Write();
 	h_totalcalo_et->Write();
 	h_vz->Write();
-	h_totalcalo_et_rw->Write();
-	h_vz_rw->Write();
 	h_sample_counts->Write();
 
 	for (int i = 0; i < cent_N; i++)
